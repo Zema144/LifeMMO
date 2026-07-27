@@ -1,9 +1,6 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaNeon } from "@prisma/adapter-neon"
-import { Pool, neonConfig } from "@neondatabase/serverless"
-import ws from "ws"
-
-neonConfig.webSocketConstructor = ws
+import { PrismaPg } from "@prisma/adapter-pg"
+import { Pool } from "pg"
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient
@@ -16,8 +13,9 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL is required to initialize Prisma.")
   }
 
+  // Передаємо екземпляр Pool, а не просто рядок
   const pool = new Pool({ connectionString })
-  const adapter = new PrismaNeon(pool)
+  const adapter = new PrismaPg(pool)
 
   return new PrismaClient({ adapter })
 }
