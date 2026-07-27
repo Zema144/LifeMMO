@@ -167,30 +167,40 @@ export function QuestCard({
       </article>
 
       {/* --- ДІАЛОГ З НАСТАВНИКОМ --- */}
+{/* --- ДІАЛОГ З НАСТАВНИКОМ --- */}
       {isAiModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          // Додано animate-in fade-in для фону
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-3 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setIsAiModalOpen(false)}
         >
-          {/* Додано zoom-in-95 для плавного збільшення вікна */}
-          <div className="relative flex w-full max-w-lg items-center animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
-            <div className="mentor-figure-enter pointer-events-none relative z-20 -mr-16 hidden h-[340px] w-56 shrink-0 sm:block">
+          <div className="relative flex w-full max-w-lg items-center justify-center animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+            {/* Арт для десктопу (збоку) */}
+            <div className="mentor-figure-enter pointer-events-none absolute -left-48 bottom-0 z-20 hidden h-[380px] w-48 shrink-0 md:block">
               <Image
                 src={mentor.avatar}
                 alt={`${mentor.name}`}
                 fill
-                className="pixelated object-contain drop-shadow-[0_10px_16px_rgba(0,0,0,0.6)] animate-idle"
+                className="pixelated object-contain object-bottom drop-shadow-[0_10px_16px_rgba(0,0,0,0.6)] animate-idle"
               />
             </div>
 
-            <div className="hud-panel relative z-10 flex h-[520px] w-full flex-col bg-card p-4 shadow-2xl">
+            <div className="hud-panel relative z-10 flex h-[85vh] max-h-[520px] w-full flex-col bg-card p-3 sm:p-4 shadow-2xl">
+              {/* Шапка з мобільним артом */}
               <div className="flex items-center gap-3 border-b-2 border-border pb-3">
+                {/* Мобільна міні-версія арту зверху */}
+                <div className="hud-inset relative size-12 shrink-0 overflow-hidden bg-background md:hidden">
+                  <Image
+                    src={mentor.avatar}
+                    alt=""
+                    fill
+                    className="pixelated object-cover object-top animate-idle"
+                  />
+                </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-pixel text-[12px] uppercase text-foreground">{mentor.name}</h3>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{mentor.title}</p>
+                  <h3 className="truncate font-pixel text-[11px] sm:text-[12px] uppercase text-foreground">{mentor.name}</h3>
+                  <p className="mt-1 truncate text-[10px] sm:text-xs text-muted-foreground">{mentor.title}</p>
                 </div>
                 <button
                   type="button"
@@ -201,28 +211,27 @@ export function QuestCard({
                 </button>
               </div>
 
-              <p className="border-b-2 border-border py-2 text-[13px] leading-relaxed text-muted-foreground text-pretty">
+              <p className="border-b-2 border-border py-2 text-xs sm:text-[13px] leading-relaxed text-muted-foreground text-pretty">
                 {quest.title}
               </p>
 
               <div className="my-3 flex-1 space-y-3 overflow-y-auto pr-1 text-xs">
                 {messages.length === 0 ? (
-                  <div className="py-8 text-center text-muted-foreground animate-in fade-in duration-500">
-                    <p className="mb-1 font-pixel text-[11px] text-foreground">{mentor.name} is ready!</p>
-                    <p className="text-xs">Ask for advice or send a report on your quest progress.</p>
+                  <div className="py-6 text-center text-muted-foreground animate-in fade-in duration-500">
+                    <p className="mb-1 font-pixel text-[10px] sm:text-[11px] text-foreground">{mentor.name} is ready!</p>
+                    <p className="text-[11px] sm:text-xs">Ask for advice or send a report on your quest progress.</p>
                   </div>
                 ) : (
                   messages.map((m, idx) => (
                     <div
                       key={idx}
-                      // Додано slide-in-from-bottom-2 для ефекту виринання нових повідомлень
                       className={`max-w-[85%] border-2 p-2.5 animate-in slide-in-from-bottom-2 fade-in duration-300 ${
                         m.role === "user"
                           ? "ml-auto border-primary/50 bg-primary/15 text-foreground"
                           : "mr-auto border-border bg-secondary/50 text-foreground"
                       }`}
                     >
-                      <p className="mb-1 font-pixel text-[9px] uppercase text-muted-foreground">
+                      <p className="mb-1 font-pixel text-[8px] sm:text-[9px] uppercase text-muted-foreground">
                         {m.role === "user" ? "You" : mentor.name}
                       </p>
                       <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
@@ -230,7 +239,7 @@ export function QuestCard({
                   ))
                 )}
                 {isLoading && (
-                  <div className="flex items-center gap-2 font-pixel text-[10px] text-muted-foreground animate-pulse">
+                  <div className="flex items-center gap-2 font-pixel text-[9px] sm:text-[10px] text-muted-foreground animate-pulse">
                     <Loader2 className="size-3 animate-spin" aria-hidden="true" />
                     {mentor.name} is formulating a response...
                   </div>
