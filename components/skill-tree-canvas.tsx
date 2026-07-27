@@ -17,10 +17,10 @@ type Edge = {
   status: SkillNode["status"]
 }
 
-const edgeStroke: Record<SkillNode["status"], string> = {
+const edgeColor: Record<SkillNode["status"], string> = {
   mastered: "var(--chart-5)",
   active: "var(--primary)",
-  locked: "rgba(148,163,184,0.4)",
+  locked: "rgba(154,138,108,0.45)",
 }
 
 export function SkillTreeCanvas({
@@ -33,8 +33,8 @@ export function SkillTreeCanvas({
   const [tipNode, setTipNode] = useState<string | null>(null)
 
   const nodeById = Object.fromEntries(tree.nodes.map((n) => [n.id, n]))
-  const width = Math.max(...tree.nodes.map((n) => n.x + NODE)) + 8
-  const height = Math.max(...tree.nodes.map((n) => n.y + NODE)) + 8
+  const width = Math.max(...tree.nodes.map((n) => n.x + NODE)) + 80
+  const height = Math.max(...tree.nodes.map((n) => n.y + NODE)) + 120
 
   const edges: Edge[] = tree.nodes.flatMap((node) =>
     node.prereqs
@@ -71,42 +71,67 @@ export function SkillTreeCanvas({
           height={height}
           aria-hidden="true"
         >
-          <defs>
-            {(["mastered", "active", "locked"] as const).map((s) => (
-              <marker
-                key={s}
-                id={`arrow-${s}`}
-                viewBox="0 0 8 8"
-                refX="4"
-                refY="4"
-                markerWidth="5"
-                markerHeight="5"
-                orient="auto-start-reverse"
-              >
-                <path d="M0,0 L8,4 L0,8 Z" fill={edgeStroke[s]} />
-              </marker>
-            ))}
-          </defs>
-          {edges.map((e) => (
-            <line
-              key={e.key}
-              x1={e.x1}
-              y1={e.y1}
-              x2={e.x2}
-              y2={e.y2}
-              stroke={edgeStroke[e.status]}
-              strokeWidth={2}
-              strokeDasharray={e.status === "locked" ? "5 4" : undefined}
-              markerEnd={`url(#arrow-${e.status})`}
-            />
-          ))}
+          {edges.map((e) =>
+            e.status === "locked" ? (
+              <line
+                key={e.key}
+                x1={e.x1}
+                y1={e.y1}
+                x2={e.x2}
+                y2={e.y2}
+                stroke={edgeColor.locked}
+                strokeWidth={5}
+                strokeLinecap="round"
+                strokeDasharray="0.1 14"
+                className="animate-flow-line-locked opacity-40"
+              />
+            ) : (
+              <g key={e.key}>
+                <line
+                  x1={e.x1}
+                  y1={e.y1}
+                  x2={e.x2}
+                  y2={e.y2}
+                  stroke="var(--border)"
+                  strokeWidth={12}
+                  strokeDasharray="14 5"
+                  strokeLinecap="butt"
+                />
+                <line
+                  x1={e.x1}
+                  y1={e.y1}
+                  x2={e.x2}
+                  y2={e.y2}
+                  stroke={edgeColor[e.status]}
+                  strokeWidth={9}
+                  strokeDasharray="14 5"
+                  strokeLinecap="butt"
+                  className="animate-flow-line"
+                  style={{ filter: "drop-shadow(0 3px 0 rgba(0,0,0,0.5))" }}
+                />
+                <line
+                  x1={e.x1}
+                  y1={e.y1}
+                  x2={e.x2}
+                  y2={e.y2}
+                  stroke={edgeColor[e.status]}
+                  strokeWidth={3}
+                  strokeDasharray="14 5"
+                  strokeLinecap="butt"
+                  opacity={0.55}
+                  className="animate-flow-line"
+                />
+              </g>
+            ),
+          )}
         </svg>
 
-        {tree.nodes.map((node) => (
+        {tree.nodes.map((node, index) => (
           <NodeTile
             key={node.id}
             tree={tree}
             node={node}
+            index={index}
             showTip={tipNode === node.id}
             onOpenNode={onOpenNode}
             onToggleTip={() => setTipNode((cur) => (cur === node.id ? null : node.id))}
@@ -120,12 +145,14 @@ export function SkillTreeCanvas({
 function NodeTile({
   tree,
   node,
+  index,
   showTip,
   onOpenNode,
   onToggleTip,
 }: {
   tree: SkillTree
   node: SkillNode
+  index: number
   showTip: boolean
   onOpenNode: (node: SkillNode) => void
   onToggleTip: () => void
@@ -145,47 +172,60 @@ function NodeTile({
     node.status === "mastered" ? "Mastered" : node.status === "locked" ? "Locked" : "In Progress"
 
   return (
-    <div className="absolute" style={{ left: node.x, top: node.y, width: NODE, height: NODE }}>
-      <button
-        type="button"
-        data-testid={`node-${node.id}`}
-        onClick={() => (node.status === "active" ? onOpenNode(node) : onToggleTip())}
-        aria-label={`${node.label} — ${statusText}`}
-        className={`rune-node flex size-full flex-col items-center justify-center gap-1 px-1 ${
-          node.status === "mastered"
-            ? "rune-mastered"
-            : node.status === "active"
-              ? "rune-active"
-              : "rune-locked opacity-80"
-        }`}
-      >
-        {badge}
-        <span
-          className={`text-center font-pixel text-[6px] leading-tight ${
-            node.status === "locked" ? "text-muted-foreground" : "text-foreground"
+    <div 
+      className={`absolute animate-in zoom-in-90 fade-in duration-500 fill-mode-both ${
+        showTip ? "z-50" : "z-10"
+      }`} 
+      style={{ 
+        left: node.x, 
+        top: node.y, 
+        width: NODE, 
+        height: NODE,
+        animationDelay: `${index * 120}ms`
+      }}
+    >
+      <div className="relative size-full">
+        <button
+          type="button"
+          data-testid={`node-${node.id}`}
+          onClick={() => (node.status === "active" ? onOpenNode(node) : onToggleTip())}
+          aria-label={`${node.label} — ${statusText}`}
+          className={`group rune-node flex size-full flex-col items-center justify-center gap-1 px-1 transition-all duration-300 ${
+            node.status === "mastered"
+              ? "rune-mastered hover:scale-105"
+              : node.status === "active"
+                ? "rune-active hover:scale-105"
+                : "rune-locked opacity-80 hover:opacity-100"
           }`}
         >
-          {node.label}
-        </span>
-        {node.status === "active" && (
-          <span className="mt-0.5 flex items-center gap-0.5 border border-primary bg-primary/25 px-1 py-0.5 font-pixel text-[5px] uppercase leading-none text-primary-foreground">
-            <ScrollText className="size-2" aria-hidden="true" />
-            View
+          {badge}
+          <span
+            className={`text-center font-pixel text-[6px] leading-tight transition-colors ${
+              node.status === "locked" ? "text-muted-foreground group-hover:text-foreground/70" : "text-foreground"
+            }`}
+          >
+            {node.label}
           </span>
-        )}
-      </button>
+          {node.status === "active" && (
+            <span className="mt-0.5 flex items-center gap-0.5 border border-primary bg-primary/25 px-1 py-0.5 font-pixel text-[5px] uppercase leading-none text-primary-foreground transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+              <ScrollText className="size-2 animate-pulse group-hover:animate-none" aria-hidden="true" />
+              View
+            </span>
+          )}
+        </button>
 
-      {node.status === "locked" && showTip && reqs.length > 0 && (
-        <div
-          role="tooltip"
-          className="hud-panel absolute left-1/2 top-full z-20 mt-2 w-40 -translate-x-1/2 bg-popover p-2 text-center"
-        >
-          <p className="font-pixel text-[6px] uppercase leading-relaxed text-gold">Requires</p>
-          <p className="mt-1 font-pixel text-[6px] leading-relaxed text-popover-foreground">
-            {reqs.join(" + ")}
-          </p>
-        </div>
-      )}
+        {node.status === "locked" && showTip && reqs.length > 0 && (
+          <div
+            role="tooltip"
+            className="hud-panel absolute left-1/2 top-full mt-3 w-40 -translate-x-1/2 bg-popover p-2 text-center animate-in slide-in-from-top-2 fade-in duration-200 shadow-2xl"
+          >
+            <p className="font-pixel text-[6px] uppercase leading-relaxed text-gold">Requires</p>
+            <p className="mt-1 font-pixel text-[6px] leading-relaxed text-popover-foreground">
+              {reqs.join(" + ")}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -6,7 +6,7 @@ export function PlayerHeader({ player }: { player: Player }) {
   return (
     <header className="hud-panel flex items-center gap-3 bg-card p-3">
       <div className="relative shrink-0">
-        <div className="hud-inset size-16 overflow-hidden bg-secondary">
+        <div className="hud-inset animate-idle size-16 overflow-hidden bg-secondary relative">
           <Image
             src="/avatar-wizard.png"
             alt={`${player.name}'s character avatar`}
@@ -16,7 +16,7 @@ export function PlayerHeader({ player }: { player: Player }) {
             priority
           />
         </div>
-        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap border-2 border-border bg-primary px-1.5 py-1 font-pixel text-[8px] leading-none text-primary-foreground">
+        <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap border-2 border-border bg-primary px-1.5 py-1 font-pixel text-[8px] leading-none text-primary-foreground z-10">
           LV {player.level}
         </span>
       </div>
@@ -30,10 +30,10 @@ export function PlayerHeader({ player }: { player: Player }) {
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-center gap-1 border-2 border-border bg-streak/15 px-2.5 py-2">
-        <Flame className="size-5 text-streak" aria-hidden="true" />
-        <span className="font-pixel text-[10px] leading-none text-streak">{player.streak}</span>
-        <span className="text-[9px] uppercase text-muted-foreground">days</span>
+      <div className="flex shrink-0 flex-col items-center gap-1 border-2 border-border bg-streak/15 px-2.5 py-2 relative overflow-hidden">
+        <Flame className="size-5 text-streak animate-flame" aria-hidden="true" />
+        <span className="font-pixel text-[10px] leading-none text-streak relative z-10">{player.streak}</span>
+        <span className="text-[9px] uppercase text-muted-foreground relative z-10">days</span>
       </div>
     </header>
   )

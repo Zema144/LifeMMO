@@ -53,6 +53,7 @@ function toQuest(quest: {
   goldReward: number
   hasAiHelper: boolean
   statusDefault?: string
+  statRewardType?: any // Додаємо поле зі статом
 }): Quest {
   return {
     id: quest.slug,
@@ -64,6 +65,7 @@ function toQuest(quest: {
     ],
     status: quest.statusDefault === "LOCKED" ? "locked" : "active",
     hasAiHelper: quest.hasAiHelper,
+    statRewardType: quest.statRewardType, // <--- ОСЬ ЦЕЙ РЯДОК ПЕРЕДАЄ СТАТ НА ФРОНТЕНД
   }
 }
 

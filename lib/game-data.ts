@@ -13,6 +13,8 @@ export type Reward = {
 
 export type QuestStatus = "active" | "completed" | "locked"
 
+export type StatKey = "STR" | "INT" | "DEX" | "CHA" | "CRAFT"
+
 export type Quest = {
   id: string
   title: string
@@ -20,9 +22,11 @@ export type Quest = {
   rewards: Reward[]
   status: QuestStatus
   hasAiHelper?: boolean
+  statRewardType?: StatKey // ДОДАНО: Синхронізація з базою даних для виклику правильного ментора
 }
 
 export type ClassColor = "int" | "str" | "cha" | "craft"
+
 
 export type NodeStatus = "mastered" | "active" | "locked"
 
@@ -71,6 +75,7 @@ export const skillTrees: SkillTree[] = [
         ],
         status: "active",
         hasAiHelper: true,
+        statRewardType: "INT", // Маг Елдор
       },
       {
         id: "de-2",
@@ -78,6 +83,7 @@ export const skillTrees: SkillTree[] = [
         description: "Add a B-tree index and measure the speedup with EXPLAIN.",
         rewards: [{ label: "90 XP", kind: "xp" }],
         status: "active",
+        statRewardType: "INT",
       },
       {
         id: "de-3",
@@ -85,6 +91,7 @@ export const skillTrees: SkillTree[] = [
         description: "Read 15 pages of the PostgreSQL internals manual.",
         rewards: [{ label: "50 XP", kind: "xp" }],
         status: "completed",
+        statRewardType: "INT",
       },
     ],
     nodes: [
@@ -122,6 +129,7 @@ export const skillTrees: SkillTree[] = [
         ],
         status: "active",
         hasAiHelper: true,
+        statRewardType: "STR", // Огр Громгар
       },
       {
         id: "fit-2",
@@ -129,6 +137,7 @@ export const skillTrees: SkillTree[] = [
         description: "Walk at least 10,000 steps before sunset.",
         rewards: [{ label: "40 XP", kind: "xp" }],
         status: "active",
+        statRewardType: "STR",
       },
     ],
     nodes: [
@@ -165,6 +174,7 @@ export const skillTrees: SkillTree[] = [
         ],
         status: "active",
         hasAiHelper: true,
+        statRewardType: "CRAFT", // Маг Елдор (за налаштуваннями твого mentors.ts)
       },
       {
         id: "cul-2",
@@ -172,6 +182,7 @@ export const skillTrees: SkillTree[] = [
         description: "Practice the julienne or brunoise technique.",
         rewards: [{ label: "60 XP", kind: "xp" }],
         status: "active",
+        statRewardType: "CRAFT",
       },
     ],
     nodes: [
@@ -208,6 +219,7 @@ export const skillTrees: SkillTree[] = [
         ],
         status: "active",
         hasAiHelper: true,
+        statRewardType: "CHA", // Ельфійка Лірана
       },
       {
         id: "fin-2",
@@ -215,6 +227,7 @@ export const skillTrees: SkillTree[] = [
         description: "Study a piece on index funds or compounding.",
         rewards: [{ label: "45 XP", kind: "xp" }],
         status: "active",
+        statRewardType: "CHA",
       },
     ],
     nodes: [
@@ -250,6 +263,7 @@ export const skillTrees: SkillTree[] = [
         ],
         status: "active",
         hasAiHelper: true,
+        statRewardType: "CHA", // Ельфійка Лірана
       },
       {
         id: "lang-2",
@@ -257,6 +271,7 @@ export const skillTrees: SkillTree[] = [
         description: "Hold a short conversation out loud, no notes.",
         rewards: [{ label: "55 XP", kind: "xp" }],
         status: "active",
+        statRewardType: "CHA",
       },
     ],
     nodes: [
@@ -292,6 +307,7 @@ export const skillTrees: SkillTree[] = [
         ],
         status: "active",
         hasAiHelper: true,
+        statRewardType: "CRAFT",
       },
       {
         id: "mus-2",
@@ -299,6 +315,7 @@ export const skillTrees: SkillTree[] = [
         description: "Memorize 8 bars of a song you love.",
         rewards: [{ label: "60 XP", kind: "xp" }],
         status: "active",
+        statRewardType: "CRAFT",
       },
     ],
     nodes: [

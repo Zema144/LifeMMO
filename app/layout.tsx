@@ -1,10 +1,10 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Press_Start_2P } from 'next/font/google'
+import { Press_Start_2P, VT323 } from 'next/font/google'
 import { Providers } from './providers'
 import './globals.css'
 
-const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
+const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-body' })
 const pressStart = Press_Start_2P({ subsets: ['latin'], weight: '400', variable: '--font-pixel' })
 
 export const metadata: Metadata = {
@@ -28,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${pressStart.variable}`}>
+    <html lang="en" className={`${vt323.variable} ${pressStart.variable}`}>
       <body className="bg-background font-sans antialiased">
         <Providers>{children}</Providers>
         {process.env.NODE_ENV === 'production' && <Analytics />}

@@ -3,9 +3,9 @@
 @import 'shadcn/tailwind.css';
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-sans: var(--font-body), monospace;
   --font-pixel: var(--font-pixel), monospace;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-mono: var(--font-body), monospace;
   --color-streak: var(--streak);
   --color-streak-foreground: var(--streak-foreground);
   --color-xp: var(--xp);
@@ -52,43 +52,43 @@
 
 :root {
   color-scheme: dark;
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
-  --popover: #1e293b;
-  --popover-foreground: #f1f5f9;
-  --primary: #6366f1;
-  --primary-foreground: #ffffff;
-  --secondary: #334155;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #334155;
-  --accent-foreground: #f1f5f9;
-  --destructive: #ef4444;
-  --border: #0b1120;
-  --input: rgba(148, 163, 184, 0.16);
-  --ring: #6366f1;
-  --streak: #f97316;
-  --streak-foreground: #ffffff;
-  --xp: #f97316;
-  --cyan: #22d3ee;
-  --gold: #fbbf24;
-  --chart-1: #6366f1;
-  --chart-2: #22d3ee;
-  --chart-3: #f97316;
-  --chart-4: #f59e0b;
-  --chart-5: #a3e635;
+  --background: #14110c;
+  --foreground: #e8dcc0;
+  --card: #221b12;
+  --card-foreground: #e8dcc0;
+  --popover: #221b12;
+  --popover-foreground: #e8dcc0;
+  --primary: #c9932e;
+  --primary-foreground: #1c1408;
+  --secondary: #2a2116;
+  --secondary-foreground: #c9bd9e;
+  --muted: #1c160e;
+  --muted-foreground: #9c8f72;
+  --accent: #2a2116;
+  --accent-foreground: #e8dcc0;
+  --destructive: #b34a2e;
+  --border: #4a3a1f;
+  --input: rgba(201, 163, 95, 0.14);
+  --ring: #c9932e;
+  --streak: #c1552e;
+  --streak-foreground: #1c1408;
+  --xp: #d9a441;
+  --cyan: #4f8f8a;
+  --gold: #e0b24e;
+  --chart-1: #4a7f9a;
+  --chart-2: #4f8f8a;
+  --chart-3: #c1552e;
+  --chart-4: #d9a441;
+  --chart-5: #7a9c4a;
   --radius: 2px;
-  --sidebar: #1e293b;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #334155;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #0b1120;
-  --sidebar-ring: #6366f1;
+  --sidebar: #221b12;
+  --sidebar-foreground: #e8dcc0;
+  --sidebar-primary: #c9932e;
+  --sidebar-primary-foreground: #1c1408;
+  --sidebar-accent: #2a2116;
+  --sidebar-accent-foreground: #e8dcc0;
+  --sidebar-border: #4a3a1f;
+  --sidebar-ring: #c9932e;
 }
 
 @layer base {
@@ -98,8 +98,8 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+      linear-gradient(rgba(201, 163, 95, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201, 163, 95, 0.05) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 }
@@ -109,6 +109,9 @@
   .font-pixel {
     font-family: var(--font-pixel), monospace;
     letter-spacing: 0.02em;
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
   }
 
   /* Pixelated image rendering for avatars / sprites */
@@ -116,20 +119,33 @@
     image-rendering: pixelated;
   }
 
-  /* Classic RPG HUD panel: square corners, thick dark border, hard drop shadow */
+  /* Classic RPG HUD panel: square corners, thick dark border, hard drop shadow, riveted corners */
   .hud-panel {
+    position: relative;
     border-radius: 3px;
     border: 3px solid var(--border);
     box-shadow:
-      inset 0 0 0 2px rgba(148, 163, 184, 0.14),
-      0 4px 0 0 rgba(0, 0, 0, 0.45);
+      inset 0 0 0 2px rgba(224, 178, 78, 0.16),
+      0 4px 0 0 rgba(0, 0, 0, 0.5);
+    background-image:
+      linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold));
+    background-size: 6px 6px;
+    background-repeat: no-repeat;
+    background-position:
+      6px 6px,
+      calc(100% - 6px) 6px,
+      6px calc(100% - 6px),
+      calc(100% - 6px) calc(100% - 6px);
   }
 
   /* Inset "recessed" slot for XP bars and inventory wells */
   .hud-inset {
     border-radius: 2px;
     border: 3px solid var(--border);
-    box-shadow: inset 0 2px 0 0 rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 2px 0 0 rgba(0, 0, 0, 0.55);
   }
 
   /* Pressable 3D retro button */
@@ -137,32 +153,48 @@
     border-radius: 2px;
     border: 3px solid var(--border);
     box-shadow:
-      inset 0 0 0 2px rgba(255, 255, 255, 0.14),
-      0 4px 0 0 rgba(0, 0, 0, 0.5);
+      inset 0 0 0 2px rgba(250, 235, 200, 0.18),
+      0 4px 0 0 rgba(0, 0, 0, 0.55);
     transition: transform 0.06s ease, box-shadow 0.06s ease;
   }
   .pixel-btn:active {
     transform: translateY(3px);
     box-shadow:
-      inset 0 0 0 2px rgba(255, 255, 255, 0.14),
-      0 1px 0 0 rgba(0, 0, 0, 0.5);
+      inset 0 0 0 2px rgba(250, 235, 200, 0.18),
+      0 1px 0 0 rgba(0, 0, 0, 0.55);
   }
 
-  /* Skill-tree rune nodes: square pixel tiles that glow by status */
+  /* Skill-tree rune nodes: square pixel tiles that glow by status, riveted corners */
   .rune-node {
+    position: relative;
     border-radius: 3px;
     border-width: 3px;
     box-shadow:
       inset 0 0 0 2px rgba(0, 0, 0, 0.35),
       0 3px 0 0 rgba(0, 0, 0, 0.5);
     transition: transform 0.08s ease, box-shadow 0.08s ease;
+    background-image:
+      linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold)),
+      linear-gradient(var(--gold), var(--gold));
+    background-size: 4px 4px;
+    background-repeat: no-repeat;
+    background-position:
+      4px 4px,
+      calc(100% - 4px) 4px,
+      4px calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px);
+  }
+  .rune-locked {
+    background-image: none;
   }
   .rune-mastered {
     border-color: var(--chart-5);
     background-color: color-mix(in oklab, var(--chart-5) 18%, var(--card));
     box-shadow:
       inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-      0 0 14px rgba(163, 230, 53, 0.45),
+      0 0 14px rgba(159, 196, 106, 0.45),
       0 3px 0 0 rgba(0, 0, 0, 0.5);
   }
   .rune-active {
@@ -170,7 +202,7 @@
     background-color: color-mix(in oklab, var(--primary) 22%, var(--card));
     box-shadow:
       inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-      0 0 16px rgba(99, 102, 241, 0.6),
+      0 0 16px rgba(201, 148, 58, 0.55),
       0 3px 0 0 rgba(0, 0, 0, 0.5);
     animation: rune-pulse 1.8s ease-in-out infinite;
   }
@@ -178,22 +210,111 @@
     transform: translateY(3px);
   }
   .rune-locked {
-    border-color: rgba(148, 163, 184, 0.35);
-    background-color: rgba(15, 23, 42, 0.85);
+    border-color: rgba(154, 138, 108, 0.35);
+    background-color: rgba(20, 17, 12, 0.85);
   }
+
+  /* Mentor portrait sliding in from the side when the dialog opens */
+  .mentor-figure-enter {
+  animation: mentor-figure-enter 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes xp-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 2px var(--xp);
+  }
+  50% {
+    opacity: 0.85;
+    filter: brightness(1.3);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 12px var(--xp);
+  }
+}
+
+.xp-pulse {
+  animation: xp-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -38;
+  }
+}
+.animate-flow-line {
+  animation: flow-dash 1.5s linear infinite;
+}
+.animate-flow-line-locked {
+  animation: flow-dash 4s linear infinite;
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1) rotate(-3deg); opacity: 0.85; filter: brightness(1); }
+  50% { transform: scale(1.15) rotate(3deg); opacity: 1; filter: brightness(1.3); }
+}
+.animate-flame {
+  animation: flame-flicker 1.5s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes idle-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.animate-idle {
+  animation: idle-breathe 4s ease-in-out infinite;
+}
+
+@keyframes shine-sweep {
+  0% { left: -100%; opacity: 0; }
+  20% { opacity: 0.5; }
+  100% { left: 200%; opacity: 0; }
+}
+.shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: skewX(-20deg);
+  animation: shine-sweep 3s infinite 2s; /* 3s анімація, 2s затримка між циклами */
+}
+
+@keyframes mentor-figure-enter {
+  0% {
+    transform: translateX(-90px) scale(0.85);
+    opacity: 0;
+    filter: brightness(1.6) blur(2px);
+  }
+  60% {
+    transform: translateX(6px) scale(1.03);
+    opacity: 1;
+    filter: brightness(1.1) blur(0);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    filter: brightness(1) blur(0);
+  }
+}
 
   @keyframes rune-pulse {
     0%,
     100% {
       box-shadow:
         inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-        0 0 10px rgba(99, 102, 241, 0.45),
+        0 0 10px rgba(201, 148, 58, 0.4),
         0 3px 0 0 rgba(0, 0, 0, 0.5);
     }
     50% {
       box-shadow:
         inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-        0 0 20px rgba(99, 102, 241, 0.8),
+        0 0 20px rgba(201, 148, 58, 0.75),
         0 3px 0 0 rgba(0, 0, 0, 0.5);
     }
   }

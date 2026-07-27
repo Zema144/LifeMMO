@@ -1,21 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { Sparkles, Coins, Zap, Check, CircleCheckBig, Plus, X, Send, Paperclip, Loader2 } from "lucide-react"
+import Image from "next/image"
+import { Coins, Zap, Check, CircleCheckBig, Plus, X, Send, Loader2 } from "lucide-react"
 import type { Quest } from "@/lib/game-data"
+import { getMentor } from "@/lib/mentors"
 
 function RewardChip({ label, kind }: { label: string; kind: string }) {
   const isGold = kind === "gold"
   return (
     <span
-      className={`inline-flex items-center gap-1 border-2 px-2 py-1 font-pixel text-[8px] leading-none ${
+      className={`shine-effect inline-flex items-center gap-1 border-2 px-2 py-1 font-pixel text-[8px] leading-none transition-transform duration-200 hover:-translate-y-1 hover:scale-105 cursor-default ${
         isGold
           ? "border-gold bg-gold/15 text-gold shadow-[0_0_8px_rgba(251,191,36,0.35)]"
           : "border-primary bg-primary/15 text-primary shadow-[0_0_8px_rgba(99,102,241,0.3)]"
       }`}
     >
-      {isGold ? <Coins className="size-3" aria-hidden="true" /> : <Zap className="size-3" aria-hidden="true" />}
-      {isGold ? `+${label}G` : `+${label}`}
+      {isGold ? <Coins className="size-3 relative z-10" aria-hidden="true" /> : <Zap className="size-3 relative z-10" aria-hidden="true" />}
+      <span className="relative z-10">{isGold ? `+${label}G` : `+${label}`}</span>
     </span>
   )
 }
@@ -28,18 +30,21 @@ export function QuestCard({
 }: {
   quest: Quest
   onComplete?: (id: string) => void
-  /** When provided, the card renders in "accept" mode (used inside a node drawer). */
   onAccept?: (id: string) => void
   accepted?: boolean
 }) {
+  console.log("ЯКИЙ КВЕСТ ПРИЙШОВ:", quest.title, quest.statRewardType);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
+
+  const mentor = getMentor(quest.statRewardType || "INT")
+
   if (quest.status === "completed") {
     return (
-      <article className="hud-panel flex items-center gap-3 bg-card/50 p-3.5 opacity-75">
+      <article className="hud-panel flex items-center gap-3 bg-card/50 p-3.5 opacity-75 transition-opacity duration-300 hover:opacity-100">
         <CircleCheckBig className="size-5 shrink-0 text-chart-5" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-pixel text-[9px] leading-relaxed text-muted-foreground line-through">
@@ -65,15 +70,15 @@ export function QuestCard({
 
     try {
       const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: newMessages,
-          questTitle: quest.title,
-          questDescription: quest.description,
-          category: quest.category || "INT", // За замовчуванням INT (Маг)
-        }),
-      })
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    messages: newMessages,
+    questTitle: quest.title,
+    questDescription: quest.description,
+    category: quest.statRewardType || "INT", 
+  }),
+})
 
       if (!response.ok) throw new Error("AI response failed")
 
@@ -92,7 +97,7 @@ export function QuestCard({
 
   return (
     <>
-      <article className="hud-panel bg-card p-4">
+      <article className="hud-panel bg-card p-4 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
         <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
 
@@ -107,10 +112,20 @@ export function QuestCard({
             <button
               type="button"
               onClick={() => setIsAiModalOpen(true)}
-              className="pixel-btn flex items-center gap-1.5 bg-secondary px-3 py-2 font-pixel text-[8px] leading-none text-secondary-foreground hover:brightness-110 transition-all"
+              className="pixel-btn flex items-center gap-1.5 bg-secondary px-2 py-2 pr-3 font-pixel text-[8px] leading-none text-secondary-foreground transition-all hover:brightness-110 active:translate-y-[2px]"
             >
-              <Sparkles className="size-3.5 text-cyan" aria-hidden="true" />
-              Ask AI
+              <span className="hud-inset size-5 shrink-0 overflow-hidden bg-background">
+                {/* Додано animate-idle для міні-аватарки */}
+                <Image
+                  src={mentor.avatar}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="pixelated size-full object-cover animate-idle"
+                  aria-hidden="true"
+                />
+              </span>
+              Ask {mentor.name}
             </button>
           )}
 
@@ -118,12 +133,11 @@ export function QuestCard({
             <button
               type="button"
               disabled={accepted}
-              data-testid={`accept-${quest.id}`}
               onClick={() => onAccept?.(quest.id)}
-              className={`ml-auto flex items-center gap-1.5 px-3 py-2 font-pixel text-[8px] leading-none ${
+              className={`ml-auto flex items-center gap-1.5 px-3 py-2 font-pixel text-[8px] leading-none transition-all ${
                 accepted
                   ? "border-2 border-chart-5 bg-chart-5/15 text-chart-5"
-                  : "pixel-btn bg-primary text-primary-foreground"
+                  : "pixel-btn bg-primary text-primary-foreground hover:brightness-110 active:translate-y-[2px]"
               }`}
             >
               {accepted ? (
@@ -133,7 +147,7 @@ export function QuestCard({
                 </>
               ) : (
                 <>
-                  <Plus className="size-3.5" aria-hidden="true" />
+                  <Plus className="size-3.5 animate-pulse" aria-hidden="true" />
                   Accept Quest
                 </>
               )}
@@ -141,9 +155,9 @@ export function QuestCard({
           ) : (
             <button
               type="button"
-              data-testid={`complete-${quest.id}`}
               onClick={() => onComplete?.(quest.id)}
-              className="pixel-btn ml-auto flex items-center gap-1.5 bg-primary px-3 py-2 font-pixel text-[8px] leading-none text-primary-foreground"
+              // Додано shadow світіння, яке пульсує при наведенні
+              className="pixel-btn ml-auto flex items-center gap-1.5 bg-primary px-3 py-2 font-pixel text-[8px] leading-none text-primary-foreground transition-all hover:shadow-[0_0_12px_rgba(201,147,46,0.6)] hover:brightness-110 active:translate-y-[2px]"
             >
               <Check className="size-3.5" aria-hidden="true" />
               Complete Quest
@@ -152,76 +166,94 @@ export function QuestCard({
         </div>
       </article>
 
-      {/* --- МОДАЛЬНЕ ВІКНО ЧАТУ З ШІ --- */}
+      {/* --- ДІАЛОГ З НАСТАВНИКОМ --- */}
       {isAiModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="hud-panel relative flex flex-col w-full max-w-lg h-[500px] bg-slate-900 border-2 border-indigo-500/30 p-4 shadow-2xl">
-            {/* Хедер модалки */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-cyan" />
-                <h3 className="font-pixel text-[10px] text-foreground uppercase truncate max-w-[280px]">
-                  {quest.title} — AI Assistant
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsAiModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {/* Область повідомлень */}
-            <div className="flex-1 overflow-y-auto my-3 space-y-3 pr-1 text-xs">
-              {messages.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <p className="font-pixel text-[9px] text-cyan mb-1">ШІ-Наставник готовий!</p>
-                  <p className="text-xs">Запитай пораду або надішли звіт про виконання квесту.</p>
-                </div>
-              ) : (
-                messages.map((m, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-2.5 rounded border max-w-[85%] ${
-                      m.role === "user"
-                        ? "ml-auto bg-indigo-950/60 border-indigo-500/40 text-indigo-100"
-                        : "mr-auto bg-slate-800/80 border-slate-700 text-slate-200"
-                    }`}
-                  >
-                    <p className="font-pixel text-[7px] uppercase mb-1 text-cyan">
-                      {m.role === "user" ? "Ти" : "ШІ-Наставник"}
-                    </p>
-                    <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
-                  </div>
-                ))
-              )}
-              {isLoading && (
-                <div className="flex items-center gap-2 text-cyan font-pixel text-[8px] animate-pulse">
-                  <Loader2 className="size-3 animate-spin" />
-                  Наставник міркує...
-                </div>
-              )}
-            </div>
-
-            {/* Інпут відправки */}
-            <form onSubmit={handleSendAiMessage} className="flex items-center gap-2 border-t border-slate-800 pt-3">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Напиши запитання або звіт..."
-                className="flex-1 bg-slate-950 border border-slate-800 px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-indigo-500 rounded"
+        <div
+          role="dialog"
+          aria-modal="true"
+          // Додано animate-in fade-in для фону
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 animate-in fade-in duration-200"
+          onClick={() => setIsAiModalOpen(false)}
+        >
+          {/* Додано zoom-in-95 для плавного збільшення вікна */}
+          <div className="relative flex w-full max-w-lg items-center animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="mentor-figure-enter pointer-events-none relative z-20 -mr-16 hidden h-[340px] w-56 shrink-0 sm:block">
+              <Image
+                src={mentor.avatar}
+                alt={`${mentor.name}`}
+                fill
+                className="pixelated object-contain drop-shadow-[0_10px_16px_rgba(0,0,0,0.6)] animate-idle"
               />
-              <button
-                type="submit"
-                disabled={isLoading || !inputMessage.trim()}
-                className="pixel-btn bg-indigo-600 px-3 py-2 text-white disabled:opacity-50 flex items-center justify-center"
-              >
-                <Send className="size-3.5" />
-              </button>
-            </form>
+            </div>
+
+            <div className="hud-panel relative z-10 flex h-[520px] w-full flex-col bg-card p-4 shadow-2xl">
+              <div className="flex items-center gap-3 border-b-2 border-border pb-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-pixel text-[12px] uppercase text-foreground">{mentor.name}</h3>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{mentor.title}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAiModalOpen(false)}
+                  className="pixel-btn bg-secondary p-2 text-secondary-foreground transition-all hover:bg-destructive hover:text-destructive-foreground active:translate-y-[2px]"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <p className="border-b-2 border-border py-2 text-[13px] leading-relaxed text-muted-foreground text-pretty">
+                {quest.title}
+              </p>
+
+              <div className="my-3 flex-1 space-y-3 overflow-y-auto pr-1 text-xs">
+                {messages.length === 0 ? (
+                  <div className="py-8 text-center text-muted-foreground animate-in fade-in duration-500">
+                    <p className="mb-1 font-pixel text-[11px] text-foreground">{mentor.name} is ready!</p>
+                    <p className="text-xs">Ask for advice or send a report on your quest progress.</p>
+                  </div>
+                ) : (
+                  messages.map((m, idx) => (
+                    <div
+                      key={idx}
+                      // Додано slide-in-from-bottom-2 для ефекту виринання нових повідомлень
+                      className={`max-w-[85%] border-2 p-2.5 animate-in slide-in-from-bottom-2 fade-in duration-300 ${
+                        m.role === "user"
+                          ? "ml-auto border-primary/50 bg-primary/15 text-foreground"
+                          : "mr-auto border-border bg-secondary/50 text-foreground"
+                      }`}
+                    >
+                      <p className="mb-1 font-pixel text-[9px] uppercase text-muted-foreground">
+                        {m.role === "user" ? "You" : mentor.name}
+                      </p>
+                      <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                    </div>
+                  ))
+                )}
+                {isLoading && (
+                  <div className="flex items-center gap-2 font-pixel text-[10px] text-muted-foreground animate-pulse">
+                    <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+                    {mentor.name} is formulating a response...
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleSendAiMessage} className="flex items-center gap-2 border-t-2 border-border pt-3">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Type a question or report..."
+                  className="hud-inset flex-1 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !inputMessage.trim()}
+                  className="pixel-btn flex items-center justify-center bg-primary px-3 py-2 text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] disabled:opacity-50 disabled:active:translate-y-0"
+                >
+                  <Send className="size-3.5" aria-hidden="true" />
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}
