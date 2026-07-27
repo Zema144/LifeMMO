@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { PageClient } from "@/app/page-client"
 import { getHomeData } from "@/lib/lifemmo-home"
 
