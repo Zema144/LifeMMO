@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-pixel: var(--font-pixel), monospace;
+  --font-mono: var(--font-geist-mono), monospace;
+  --color-streak: var(--streak);
+  --color-streak-foreground: var(--streak-foreground);
+  --color-xp: var(--xp);
+  --color-cyan: var(--cyan);
+  --color-gold: var(--gold);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
+}
+
+:root {
+  color-scheme: dark;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #334155;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #334155;
+  --accent-foreground: #f1f5f9;
+  --destructive: #ef4444;
+  --border: #0b1120;
+  --input: rgba(148, 163, 184, 0.16);
+  --ring: #6366f1;
+  --streak: #f97316;
+  --streak-foreground: #ffffff;
+  --xp: #f97316;
+  --cyan: #22d3ee;
+  --gold: #fbbf24;
+  --chart-1: #6366f1;
+  --chart-2: #22d3ee;
+  --chart-3: #f97316;
+  --chart-4: #f59e0b;
+  --chart-5: #a3e635;
+  --radius: 2px;
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: #0b1120;
+  --sidebar-ring: #6366f1;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+@layer utilities {
+  /* Retro pixel font with crisp edges */
+  .font-pixel {
+    font-family: var(--font-pixel), monospace;
+    letter-spacing: 0.02em;
+  }
+
+  /* Pixelated image rendering for avatars / sprites */
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
+  /* Classic RPG HUD panel: square corners, thick dark border, hard drop shadow */
+  .hud-panel {
+    border-radius: 3px;
+    border: 3px solid var(--border);
+    box-shadow:
+      inset 0 0 0 2px rgba(148, 163, 184, 0.14),
+      0 4px 0 0 rgba(0, 0, 0, 0.45);
+  }
+
+  /* Inset "recessed" slot for XP bars and inventory wells */
+  .hud-inset {
+    border-radius: 2px;
+    border: 3px solid var(--border);
+    box-shadow: inset 0 2px 0 0 rgba(0, 0, 0, 0.5);
+  }
+
+  /* Pressable 3D retro button */
+  .pixel-btn {
+    border-radius: 2px;
+    border: 3px solid var(--border);
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 255, 255, 0.14),
+      0 4px 0 0 rgba(0, 0, 0, 0.5);
+    transition: transform 0.06s ease, box-shadow 0.06s ease;
+  }
+  .pixel-btn:active {
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 255, 255, 0.14),
+      0 1px 0 0 rgba(0, 0, 0, 0.5);
+  }
+
+  /* Skill-tree rune nodes: square pixel tiles that glow by status */
+  .rune-node {
+    border-radius: 3px;
+    border-width: 3px;
+    box-shadow:
+      inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+      0 3px 0 0 rgba(0, 0, 0, 0.5);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .rune-mastered {
+    border-color: var(--chart-5);
+    background-color: color-mix(in oklab, var(--chart-5) 18%, var(--card));
+    box-shadow:
+      inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+      0 0 14px rgba(163, 230, 53, 0.45),
+      0 3px 0 0 rgba(0, 0, 0, 0.5);
+  }
+  .rune-active {
+    border-color: var(--primary);
+    background-color: color-mix(in oklab, var(--primary) 22%, var(--card));
+    box-shadow:
+      inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+      0 0 16px rgba(99, 102, 241, 0.6),
+      0 3px 0 0 rgba(0, 0, 0, 0.5);
+    animation: rune-pulse 1.8s ease-in-out infinite;
+  }
+  .rune-active:active {
+    transform: translateY(3px);
+  }
+  .rune-locked {
+    border-color: rgba(148, 163, 184, 0.35);
+    background-color: rgba(15, 23, 42, 0.85);
+  }
+
+  @keyframes rune-pulse {
+    0%,
+    100% {
+      box-shadow:
+        inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+        0 0 10px rgba(99, 102, 241, 0.45),
+        0 3px 0 0 rgba(0, 0, 0, 0.5);
+    }
+    50% {
+      box-shadow:
+        inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+        0 0 20px rgba(99, 102, 241, 0.8),
+        0 3px 0 0 rgba(0, 0, 0, 0.5);
+    }
+  }
+}

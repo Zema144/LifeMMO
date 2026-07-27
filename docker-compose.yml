@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: lifemmo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lifemmo
+      POSTGRES_USER: lifemmo
+      POSTGRES_PASSWORD: lifemmo
+    ports:
+      - "5432:5432"
+    volumes:
+      - lifemmo-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  lifemmo-postgres-data:

@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StatKey {
+  STR
+  INT
+  DEX
+  CHA
+}
+
+enum NpcRole {
+  WIZARD
+  WARRIOR
+  ELF
+}
+
+enum ClassColor {
+  INT
+  STR
+  CHA
+  CRAFT
+}
+
+enum QuestKind {
+  DAILY
+  MAIN
+  MILESTONE
+  PENALTY
+}
+
+enum QuestDefaultStatus {
+  ACTIVE
+  LOCKED
+}
+
+enum UserQuestStatus {
+  ACCEPTED
+  COMPLETED
+  FAILED
+}
+
+enum NodeDefaultStatus {
+  MASTERED
+  ACTIVE
+  LOCKED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id          String            @id @default(cuid())
+  telegramId  String            @unique
+  username    String?
+  firstName   String?
+  lastName    String?
+  avatarUrl   String?
+  title       String            @default("Novice Adventurer")
+  level       Int               @default(1)
+  xp          Int               @default(0)
+  xpToNext    Int               @default(1000)
+  gold        Int               @default(0)
+  streak      Int               @default(0)
+  strStat     Int               @default(5) @map("str")
+  intStat     Int               @default(5) @map("int")
+  dexStat     Int               @default(5) @map("dex")
+  chaStat     Int               @default(5) @map("cha")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  joinedTrees UserSkillTree[]
+  quests      UserQuest[]
+  submissions QuestSubmission[]
+  debuffs     Debuff[]
+
+  @@map("users")
+}
+
+model SkillTree {
+  id           String          @id @default(cuid())
+  slug         String          @unique
+  label        String
+  className    String
+  blurb        String
+  icon         String
+  classColor   ClassColor
+  displayLevel Int             @default(1)
+  primaryStat  StatKey
+  npcRole      NpcRole
+  sortOrder    Int             @default(0)
+  isStarter    Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  nodes        SkillNode[]
+  quests       Quest[]
+  users        UserSkillTree[]
+
+  @@map("skill_trees")
+}
+
+model UserSkillTree {
+  userId      String
+  skillTreeId String
+  joinedAt    DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillTree   SkillTree @relation(fields: [skillTreeId], references: [id], onDelete: Cascade)
+
+  @@id([userId, skillTreeId])
+  @@map("user_skill_trees")
+}
+
+model SkillNode {
+  id            String                  @id @default(cuid())
+  treeId        String
+  slug          String                  @unique
+  label         String
+  statusDefault NodeDefaultStatus       @default(LOCKED)
+  x             Int
+  y             Int
+  sortOrder     Int                     @default(0)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  tree          SkillTree               @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  quests        Quest[]
+  prerequisites SkillNodePrerequisite[] @relation("NodePrerequisites")
+  unlocks       SkillNodePrerequisite[] @relation("PrerequisiteFor")
+
+  @@index([treeId])
+  @@map("skill_nodes")
+}
+
+model SkillNodePrerequisite {
+  nodeId         String
+  prerequisiteId String
+  node           SkillNode @relation("NodePrerequisites", fields: [nodeId], references: [id], onDelete: Cascade)
+  prerequisite   SkillNode @relation("PrerequisiteFor", fields: [prerequisiteId], references: [id], onDelete: Restrict)
+
+  @@id([nodeId, prerequisiteId])
+  @@map("skill_node_prerequisites")
+}
+
+model Quest {
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  treeId          String
+  nodeId          String?
+  kind            QuestKind          @default(DAILY)
+  title           String
+  description     String
+  statusDefault   QuestDefaultStatus @default(ACTIVE)
+  hasAiHelper     Boolean            @default(false)
+  xpReward        Int                @default(0)
+  goldReward      Int                @default(0)
+  statRewardType  StatKey?
+  statRewardValue Int?
+  sortOrder       Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  tree            SkillTree          @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  node            SkillNode?         @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  users           UserQuest[]
+  submissions     QuestSubmission[]
+  debuffs         Debuff[]           @relation("SourceQuestDebuffs")
+
+  @@index([treeId])
+  @@index([nodeId])
+  @@map("quests")
+}
+
+model UserQuest {
+  id          String          @id @default(cuid())
+  userId      String
+  questId     String
+  status      UserQuestStatus @default(ACCEPTED)
+  acceptedAt  DateTime        @default(now())
+  completedAt DateTime?
+  failedAt    DateTime?
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest       Quest           @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId])
+  @@index([questId])
+  @@map("user_quests")
+}
+
+model QuestSubmission {
+  id            String           @id @default(cuid())
+  userId        String
+  questId       String
+  text          String
+  attachmentUrl String?
+  status        SubmissionStatus @default(PENDING)
+  aiApproved    Boolean?
+  aiFeedback    String?
+  aiVerdict     Json?
+  createdAt     DateTime         @default(now())
+  reviewedAt    DateTime?
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quest         Quest            @relation(fields: [questId], references: [id], onDelete: Cascade)
+
+  @@index([userId, questId])
+  @@map("quest_submissions")
+}
+
+model Debuff {
+  id                 String    @id @default(cuid())
+  userId             String
+  sourceQuestId      String?
+  stat               StatKey
+  value              Int
+  reason             String
+  penaltyQuestTitle  String?
+  penaltyDescription String?
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  resolvedAt         DateTime?
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceQuest        Quest?    @relation("SourceQuestDebuffs", fields: [sourceQuestId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isActive])
+  @@map("debuffs")
+}
