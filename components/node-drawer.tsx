@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect } from "react"
-import { X, ScrollText } from "lucide-react"
+import { X, Lock, CheckCircle2, Sparkles } from "lucide-react"
 import { QuestCard } from "@/components/quest-card"
-import { TreeIcon } from "@/components/tree-icon"
 import type { Quest, SkillNode, SkillTree } from "@/lib/game-data"
 
 export function NodeDrawer({
@@ -12,6 +11,7 @@ export function NodeDrawer({
   quests,
   acceptedQuestIds,
   onAccept,
+  onComplete, // <--- 1. ДОДАЛИ onComplete СЮДИ
   onClose,
 }: {
   tree: SkillTree
@@ -19,78 +19,114 @@ export function NodeDrawer({
   quests: Quest[]
   acceptedQuestIds: string[]
   onAccept: (id: string) => void
+  onComplete: (id: string) => void // <--- 2. ДОДАЛИ ТИП ДЛЯ onComplete
   onClose: () => void
 }) {
+  const pendingQuests = quests.filter((q) => q.status !== "completed")
+  const completedQuests = quests.filter((q) => q.status === "completed")
+  const activeQuest = pendingQuests[0]
+
   useEffect(() => {
-    if (!node) return
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [node, onClose])
+    if (activeQuest && !acceptedQuestIds.includes(activeQuest.id)) {
+      onAccept(activeQuest.id)
+    }
+  }, [activeQuest, acceptedQuestIds, onAccept])
 
   if (!node) return null
 
-  const active = quests.filter((q) => q.status !== "completed")
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true">
-      <button
-        type="button"
-        aria-label="Close node details"
-        onClick={onClose}
-        className="absolute inset-0 bg-background/80"
-      />
-
-      <div className="hud-panel relative z-10 flex max-h-[80vh] w-full max-w-md flex-col bg-card">
-        <div className="flex items-center gap-3 border-b-2 border-border bg-primary/15 p-4">
-          <span className="flex size-9 items-center justify-center border-2 border-primary bg-primary/25">
-            <TreeIcon icon={tree.icon} className="size-4 text-primary" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-pixel text-[7px] uppercase text-primary">In Progress</p>
-            <h2 className="mt-1 truncate font-pixel text-[10px] leading-relaxed text-foreground">
+    <div
+      role="dialog"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#050308]/80 p-4 backdrop-blur-sm animate-in fade-in duration-300"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-primary/30 bg-[#120d16] shadow-[0_0_50px_rgba(201,148,58,0.15)] animate-in zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Шапка */}
+        <div className="flex items-center justify-between border-b border-primary/20 bg-gradient-to-r from-primary/10 to-transparent p-5">
+          <div>
+            <p className="flex items-center gap-1.5 font-pixel text-[11px] uppercase tracking-wider text-primary">
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              {tree.label}
+            </p>
+            <h2 className="mt-1.5 font-serif text-2xl italic tracking-wide text-foreground drop-shadow-md">
               {node.label}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="pixel-btn bg-secondary p-2 text-secondary-foreground"
+            className="rounded-full border border-primary/20 bg-background/50 p-2.5 text-primary/70 transition-all hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive"
           >
-            <X className="size-4" aria-hidden="true" />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex items-center gap-2 px-4 pt-4">
-          <ScrollText className="size-4 text-gold" aria-hidden="true" />
-          <h3 className="font-pixel text-[9px] uppercase text-foreground">Node Quests</h3>
-          <span className="ml-auto font-pixel text-[8px] text-muted-foreground">{active.length} active</span>
-        </div>
+        <div className="flex max-h-[75vh] flex-col gap-6 overflow-y-auto p-5 pointer-events-auto">
+          {pendingQuests.map((quest) => {
+            const isActive = activeQuest?.id === quest.id
 
-        <p className="px-4 pt-2 text-[11px] leading-relaxed text-muted-foreground text-pretty">
-          Accept a quest to add it to your Quests tab.
-        </p>
-
-        <div className="flex flex-col gap-3 overflow-y-auto p-4">
-          {quests.length === 0 ? (
-            <p className="py-6 text-center font-pixel text-[8px] leading-relaxed text-muted-foreground">
-              No quests bound to this node yet.
-            </p>
-          ) : (
-            quests.map((quest) => (
-              <QuestCard
+            return (
+              <div
                 key={quest.id}
-                quest={quest}
-                onAccept={onAccept}
-                accepted={acceptedQuestIds.includes(quest.id)}
-              />
-            ))
+                className={`relative transition-all duration-700 ease-out animate-in slide-in-from-bottom-4 fade-in ${
+                  isActive
+                    ? "scale-100 opacity-100"
+                    : "pointer-events-none scale-[0.98] opacity-50 grayscale"
+                }`}
+              >
+                {isActive && (
+                  <div className="absolute -inset-1 rounded-xl bg-primary/25 blur-md animate-pulse" />
+                )}
+
+                {!isActive && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-background/30 backdrop-blur-[1px]">
+                    <div className="flex items-center gap-1.5 rounded-full border border-border bg-[#16121e] px-4 py-1.5 font-pixel text-[10px] uppercase text-muted-foreground shadow-xl">
+                      <Lock className="size-3.5" aria-hidden="true" />
+                      In Queue
+                    </div>
+                  </div>
+                )}
+                
+                <div className={`relative z-10 overflow-hidden rounded-xl bg-card ${isActive ? 'border border-primary/80 shadow-[0_0_20px_rgba(201,148,58,0.2)]' : 'border border-border'}`}>
+                  {/* 3. ТЕПЕР МИ ПЕРЕДАЄМО onComplete ПРАВИЛЬНО */}
+                  <QuestCard quest={quest} onComplete={onComplete} variant="magical" />
+                </div>
+              </div>
+            )
+          })}
+
+          {pendingQuests.length === 0 && completedQuests.length > 0 && (
+            <div className="my-5 flex flex-col items-center justify-center text-center">
+              <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-chart-5/10">
+                <CheckCircle2 className="size-7 text-chart-5" />
+              </div>
+              <p className="font-pixel text-[13px] uppercase text-chart-5 drop-shadow-[0_0_8px_rgba(122,156,74,0.4)]">
+                Node Mastered
+              </p>
+              <p className="mt-2 text-[12px] text-muted-foreground">All arcane knowledge absorbed.</p>
+            </div>
           )}
-          {quests.length > 0 && active.length === 0 && (
-            <p className="pb-2 text-center font-pixel text-[8px] leading-relaxed text-chart-5">
-              Node complete. Master it to unlock the next rune.
-            </p>
+
+          {completedQuests.length > 0 && (
+            <div className="mt-2 flex flex-col gap-3 border-t border-primary/20 pt-5">
+              <p className="font-pixel text-[10px] uppercase tracking-wider text-muted-foreground">
+                Completed Manifestations
+              </p>
+              {completedQuests.map((quest) => (
+                <div
+                  key={quest.id}
+                  className="flex items-center gap-4 rounded-md border border-chart-5/30 bg-chart-5/5 p-3.5 transition-all animate-in zoom-in duration-300"
+                >
+                  <CheckCircle2 className="size-5 shrink-0 text-chart-5" aria-hidden="true" />
+                  <p className="line-clamp-1 font-serif text-[15px] italic text-muted-foreground line-through">
+                    {quest.title}
+                  </p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

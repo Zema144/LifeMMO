@@ -69,20 +69,6 @@ export function PageClient({
       .filter((quest): quest is Quest => quest !== null && quest.status !== "completed")
   }, [acceptedQuestIds, questState, treeIdByQuestId])
 
-  useEffect(() => {
-    if (capturedOpenRef.current) return
-    capturedOpenRef.current = true
-
-    posthog.identify(currentUserId, {
-      name: initialPlayer.name,
-      level: initialPlayer.level,
-    })
-    posthog.capture(analyticsEvents.appOpened, {
-      active_tree_count: activeTrees.length,
-      accepted_quest_count: acceptedQuestIds.length,
-    })
-  }, [acceptedQuestIds.length, activeTrees.length, currentUserId, initialPlayer.level, initialPlayer.name])
-
   const handleComplete = (id: string) => {
     const entry = treeIdByQuestId[id]
     if (!entry) return
@@ -137,6 +123,44 @@ export function PageClient({
       setAcceptedQuestIds((prev) => prev.filter((questId) => questId !== id))
     })
   }
+
+  // --- ГЛОБАЛЬНИЙ СКАНЕР ЧЕРГИ КВЕСТІВ ---
+  useEffect(() => {
+    activeTrees.forEach((treeId) => {
+      const currentTree = initialSkillTrees.find((t) => t.id === treeId)
+      if (!currentTree) return
+
+      const activeNodes = currentTree.nodes.filter((node) => node.status === "active")
+
+      activeNodes.forEach((node) => {
+        if (!node.questIds) return
+
+        const nodeQuests = questState[currentTree.id]?.filter((q) => node.questIds!.includes(q.id)) || []
+        const firstPendingQuest = nodeQuests.find((q) => q.status !== "completed")
+
+        // Якщо знайшли незавершений квест, якого ще немає в прийнятих — беремо його автоматично
+        if (firstPendingQuest && !acceptedQuestIds.includes(firstPendingQuest.id)) {
+          handleAccept(firstPendingQuest.id)
+        }
+      })
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTrees, questState, acceptedQuestIds, initialSkillTrees])
+  // ----------------------------------------------
+
+  useEffect(() => {
+    if (capturedOpenRef.current) return
+    capturedOpenRef.current = true
+
+    posthog.identify(currentUserId, {
+      name: initialPlayer.name,
+      level: initialPlayer.level,
+    })
+    posthog.capture(analyticsEvents.appOpened, {
+      active_tree_count: activeTrees.length,
+      accepted_quest_count: acceptedQuestIds.length,
+    })
+  }, [acceptedQuestIds.length, activeTrees.length, currentUserId, initialPlayer.level, initialPlayer.name])
 
   const handleSelect = (id: SkillTreeId) => {
     setSelected(id)
@@ -221,6 +245,7 @@ export function PageClient({
         quests={drawerQuests}
         acceptedQuestIds={acceptedQuestIds}
         onAccept={handleAccept}
+        onComplete={handleComplete}
         onClose={() => setOpenNode(null)}
       />
 
