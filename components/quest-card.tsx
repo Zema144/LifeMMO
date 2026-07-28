@@ -107,25 +107,29 @@ export function QuestCard({
 
     return (
       <>
-        <article className="relative overflow-hidden bg-gradient-to-br from-[#1c1622] to-background p-6 transition-all duration-300">
+        <article className="relative overflow-hidden bg-gradient-to-br from-[#1c1622] to-background p-4 sm:p-6 transition-all duration-300">
           <div className="absolute -right-12 -top-12 size-32 rounded-full bg-primary/10 blur-3xl" />
-          <h3 className="relative z-10 font-serif text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
-          <p className="relative z-10 mt-2 text-[14px] leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
-          <div className="relative z-10 mt-5 flex flex-wrap gap-2.5">
+          
+          <h3 className="relative z-10 font-serif text-[15px] sm:text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
+          
+          <p className="relative z-10 mt-1.5 sm:mt-2 text-[12px] sm:text-[14px] leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
+          
+          <div className="relative z-10 mt-4 sm:mt-5 flex flex-wrap gap-2 sm:gap-2.5">
             {quest.rewards.map((r) => <MagicalRewardChip key={r.label} label={r.label} kind={r.kind} />)}
           </div>
-          <div className="relative z-10 mt-7 flex flex-wrap gap-3">
+          
+          <div className="relative z-10 mt-5 sm:mt-7 flex flex-wrap gap-2.5 sm:gap-3">
             {quest.hasAiHelper && (
-              <button type="button" onClick={() => setIsAiModalOpen(true)} className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 font-pixel text-[10px] text-foreground transition-all hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_15px_rgba(201,148,58,0.2)] active:scale-95">
-                <div className="relative size-7 overflow-hidden rounded-full border border-primary/30 bg-background shadow-inner">
+              <button type="button" onClick={() => setIsAiModalOpen(true)} className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 sm:px-4 sm:py-2.5 font-pixel text-[9px] sm:text-[10px] text-foreground transition-all hover:border-primary/50 hover:bg-primary/15 hover:shadow-[0_0_15px_rgba(201,148,58,0.2)] active:scale-95">
+                <div className="relative size-6 sm:size-7 overflow-hidden rounded-full border border-primary/30 bg-background shadow-inner">
                   <Image src={mentor.avatar} alt="" fill className="pixelated object-cover animate-idle" aria-hidden="true" />
                 </div>
                 Ask {mentor.name}
               </button>
             )}
             {onComplete && (
-              <button type="button" onClick={() => onComplete(quest.id)} className="ml-auto flex items-center gap-2 rounded-lg border border-primary bg-primary/20 px-5 py-2.5 font-pixel text-[10px] uppercase tracking-wide text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(201,148,58,0.4)] active:scale-95">
-                <Check className="size-4" aria-hidden="true" /> Complete
+              <button type="button" onClick={() => onComplete(quest.id)} className="ml-auto flex items-center gap-1.5 sm:gap-2 rounded-lg border border-primary bg-primary/20 px-4 py-2 sm:px-5 sm:py-2.5 font-pixel text-[9px] sm:text-[10px] uppercase tracking-wide text-primary transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(201,148,58,0.4)] active:scale-95">
+                <Check className="size-3.5 sm:size-4" aria-hidden="true" /> Complete
               </button>
             )}
           </div>

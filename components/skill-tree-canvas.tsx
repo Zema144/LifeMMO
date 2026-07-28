@@ -178,7 +178,7 @@ export function SkillTreeCanvas({
     [tree.nodes, layout, nodesById],
   )
 
-  // ---------- pan & zoom via Pointer Events (robust across mouse/touch/pen) ----------
+  // ---------- pan & zoom via Pointer Events ----------
   const viewportRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: -40 })
@@ -202,8 +202,13 @@ export function SkillTreeCanvas({
       pinchStart.current = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), scale }
     }
   }
+
   function onPointerMove(e: React.PointerEvent) {
-    e.preventDefault();
+    // ЗАХИСТ ВІД СКРОЛУ СТОРІНКИ ПІД ЧАС ДРАГУ
+    if (pointers.current.size > 0 && e.cancelable) {
+      e.preventDefault()
+    }
+    
     if (!pointers.current.has(e.pointerId)) return
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
 
@@ -220,6 +225,7 @@ export function SkillTreeCanvas({
       setPan((p) => ({ x: p.x + dx, y: p.y + dy }))
     }
   }
+
   function onPointerEnd(e: React.PointerEvent) {
     pointers.current.delete(e.pointerId)
     if (dragPointerId.current === e.pointerId) {
@@ -254,13 +260,15 @@ export function SkillTreeCanvas({
 
       <div
         ref={viewportRef}
-        className={`arcane-viewport ${isDragging ? "grabbing" : ""}`}
+        // ДОДАЛИ КЛАС "touch-none", ЩОБ БРАУЗЕР НЕ ПЕРЕХОПЛЮВАВ ЖЕСТИ
+        className={`arcane-viewport touch-none ${isDragging ? "grabbing" : ""}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}
         onPointerCancel={onPointerEnd}
       >
         <div className="arcane-world" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}>
+          {/* ... решта твого коду з SVG та нодами залишається без змін ... */}
           <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden="true">
             <defs>
               <filter id={`thread-glow-${tree.id}`} x="-80%" y="-80%" width="260%" height="260%">

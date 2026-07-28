@@ -51,7 +51,7 @@ export function PageClient({
   const treeIdByQuestId = useMemo(() => questIndex(initialSkillTrees), [initialSkillTrees])
   const tree = useMemo(() => initialSkillTrees.find((item) => item.id === selected)!, [initialSkillTrees, selected])
   const treeQuests = questState[selected] ?? []
-  const showDebuff = selected === "fitness" && activeTab === "quests"
+  const showDebuff = activeTrees.includes("fitness") && activeTab === "quests"
 
   const drawerQuests = useMemo(() => {
     if (!openNode?.questIds) return []
@@ -209,7 +209,7 @@ export function PageClient({
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 px-4 pb-24 pt-5">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-4 px-4 pb-28 pt-5">
       {activeTab === "quests" && (
         <>
           <PlayerHeader player={initialPlayer} />

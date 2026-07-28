@@ -45,26 +45,26 @@ export function NodeDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Шапка */}
-        <div className="flex items-center justify-between border-b border-primary/20 bg-gradient-to-r from-primary/10 to-transparent p-5">
+        <div className="flex items-center justify-between border-b border-primary/20 bg-gradient-to-r from-primary/10 to-transparent p-4 sm:p-5">
           <div>
-            <p className="flex items-center gap-1.5 font-pixel text-[11px] uppercase tracking-wider text-primary">
-              <Sparkles className="size-3.5" aria-hidden="true" />
+            <p className="flex items-center gap-1 font-pixel text-[9px] sm:text-[11px] uppercase tracking-wider text-primary">
+              <Sparkles className="size-3 sm:size-3.5" aria-hidden="true" />
               {tree.label}
             </p>
-            <h2 className="mt-1.5 font-serif text-2xl italic tracking-wide text-foreground drop-shadow-md">
+            <h2 className="mt-1 font-serif text-xl sm:text-2xl italic tracking-wide text-foreground drop-shadow-md">
               {node.label}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-primary/20 bg-background/50 p-2.5 text-primary/70 transition-all hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive"
+            className="rounded-full border border-primary/20 bg-background/50 p-2 sm:p-2.5 text-primary/70 transition-all hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive"
           >
-            <X className="size-5" aria-hidden="true" />
+            <X className="size-4 sm:size-5" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex max-h-[75vh] flex-col gap-6 overflow-y-auto p-5 pointer-events-auto">
+        <div className="flex max-h-[80vh] flex-col gap-4 sm:gap-6 overflow-y-auto p-4 sm:p-5 pointer-events-auto">
           {pendingQuests.map((quest) => {
             const isActive = activeQuest?.id === quest.id
 
