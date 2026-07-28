@@ -105,7 +105,8 @@
 }
 
 @layer utilities {
-  /* Retro pixel font with crisp edges */
+  /* Retro pixel font with crisp edges — smoothing disabled so glyphs render
+     consistently at small sizes instead of "shimmering" between scroll frames */
   .font-pixel {
     font-family: var(--font-pixel), monospace;
     letter-spacing: 0.02em;
@@ -164,158 +165,339 @@
       0 1px 0 0 rgba(0, 0, 0, 0.55);
   }
 
-  /* Skill-tree rune nodes: square pixel tiles that glow by status, riveted corners */
-  .rune-node {
-    position: relative;
-    border-radius: 3px;
-    border-width: 3px;
-    box-shadow:
-      inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-      0 3px 0 0 rgba(0, 0, 0, 0.5);
-    transition: transform 0.08s ease, box-shadow 0.08s ease;
-    background-image:
-      linear-gradient(var(--gold), var(--gold)),
-      linear-gradient(var(--gold), var(--gold)),
-      linear-gradient(var(--gold), var(--gold)),
-      linear-gradient(var(--gold), var(--gold));
-    background-size: 4px 4px;
-    background-repeat: no-repeat;
-    background-position:
-      4px 4px,
-      calc(100% - 4px) 4px,
-      4px calc(100% - 4px),
-      calc(100% - 4px) calc(100% - 4px);
-  }
-  .rune-locked {
-    background-image: none;
-  }
-  .rune-mastered {
-    border-color: var(--chart-5);
-    background-color: color-mix(in oklab, var(--chart-5) 18%, var(--card));
-    box-shadow:
-      inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-      0 0 14px rgba(159, 196, 106, 0.45),
-      0 3px 0 0 rgba(0, 0, 0, 0.5);
-  }
-  .rune-active {
-    border-color: var(--primary);
-    background-color: color-mix(in oklab, var(--primary) 22%, var(--card));
-    box-shadow:
-      inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-      0 0 16px rgba(201, 148, 58, 0.55),
-      0 3px 0 0 rgba(0, 0, 0, 0.5);
-    animation: rune-pulse 1.8s ease-in-out infinite;
-  }
-  .rune-active:active {
-    transform: translateY(3px);
-  }
-  .rune-locked {
-    border-color: rgba(154, 138, 108, 0.35);
-    background-color: rgba(20, 17, 12, 0.85);
-  }
-
-  /* Mentor portrait sliding in from the side when the dialog opens */
+  /* ---------- Mentor dialog: full-height figure sliding in from the left ---------- */
   .mentor-figure-enter {
-  animation: mentor-figure-enter 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-@keyframes xp-glow {
-  0%, 100% {
-    opacity: 1;
-    filter: brightness(1);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 2px var(--xp);
+    animation: mentor-figure-enter 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   }
-  50% {
-    opacity: 0.85;
-    filter: brightness(1.3);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 12px var(--xp);
-  }
-}
-
-.xp-pulse {
-  animation: xp-glow 1.5s ease-in-out infinite;
-}
-
-@keyframes flow-dash {
-  to {
-    stroke-dashoffset: -38;
-  }
-}
-.animate-flow-line {
-  animation: flow-dash 1.5s linear infinite;
-}
-.animate-flow-line-locked {
-  animation: flow-dash 4s linear infinite;
-}
-
-@keyframes flame-flicker {
-  0%, 100% { transform: scale(1) rotate(-3deg); opacity: 0.85; filter: brightness(1); }
-  50% { transform: scale(1.15) rotate(3deg); opacity: 1; filter: brightness(1.3); }
-}
-.animate-flame {
-  animation: flame-flicker 1.5s ease-in-out infinite;
-  transform-origin: bottom center;
-}
-
-@keyframes idle-breathe {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-.animate-idle {
-  animation: idle-breathe 4s ease-in-out infinite;
-}
-
-@keyframes shine-sweep {
-  0% { left: -100%; opacity: 0; }
-  20% { opacity: 0.5; }
-  100% { left: 200%; opacity: 0; }
-}
-.shine-effect {
-  position: relative;
-  overflow: hidden;
-}
-.shine-effect::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: skewX(-20deg);
-  animation: shine-sweep 3s infinite 2s; /* 3s анімація, 2s затримка між циклами */
-}
-
-@keyframes mentor-figure-enter {
-  0% {
-    transform: translateX(-90px) scale(0.85);
-    opacity: 0;
-    filter: brightness(1.6) blur(2px);
-  }
-  60% {
-    transform: translateX(6px) scale(1.03);
-    opacity: 1;
-    filter: brightness(1.1) blur(0);
-  }
-  100% {
-    transform: translateX(0) scale(1);
-    opacity: 1;
-    filter: brightness(1) blur(0);
-  }
-}
-
-  @keyframes rune-pulse {
-    0%,
+  @keyframes mentor-figure-enter {
+    0% {
+      transform: translateX(-90px) scale(0.85);
+      opacity: 0;
+      filter: brightness(1.6) blur(2px);
+    }
+    60% {
+      transform: translateX(6px) scale(1.03);
+      opacity: 1;
+      filter: brightness(1.1) blur(0);
+    }
     100% {
-      box-shadow:
-        inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-        0 0 10px rgba(201, 148, 58, 0.4),
-        0 3px 0 0 rgba(0, 0, 0, 0.5);
+      transform: translateX(0) scale(1);
+      opacity: 1;
+      filter: brightness(1) blur(0);
+    }
+  }
+
+  /* ---------- XP bar pulse on the last filled segment ---------- */
+  .xp-pulse {
+    animation: xp-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes xp-pulse {
+    0%, 100% {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 4px rgba(217, 164, 65, 0.4);
     }
     50% {
-      box-shadow:
-        inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-        0 0 20px rgba(201, 148, 58, 0.75),
-        0 3px 0 0 rgba(0, 0, 0, 0.5);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 12px rgba(217, 164, 65, 0.9);
     }
+  }
+
+  /* ---------- Streak flame flicker ---------- */
+  .streak-flicker {
+    animation: streak-flicker 2.2s ease-in-out infinite;
+  }
+  @keyframes streak-flicker {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.75; transform: scale(0.95); }
+  }
+
+  /* =========================================================
+     ARCANE SKILL-TREE SCENE
+     Used by components/skill-tree-canvas.tsx
+     ========================================================= */
+
+  /* ---------- Scene wrapper: starfield + nebula + vignette ---------- */
+  .arcane-scene {
+    position: relative;
+    height: 440px;
+    overflow: hidden;
+    border-radius: 3px;
+    border: 3px solid var(--border);
+    background: radial-gradient(ellipse 90% 70% at 50% 30%, #1f1428, #0d0812 80%);
+  }
+
+  .arcane-nebula {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.55;
+    background-image:
+      radial-gradient(1px 1px at 15% 20%, rgba(255, 255, 255, 0.7), transparent),
+      radial-gradient(1px 1px at 35% 65%, rgba(255, 255, 255, 0.5), transparent),
+      radial-gradient(1.5px 1.5px at 60% 15%, rgba(255, 255, 255, 0.6), transparent),
+      radial-gradient(1px 1px at 80% 45%, rgba(255, 255, 255, 0.45), transparent),
+      radial-gradient(1.5px 1.5px at 90% 80%, rgba(255, 255, 255, 0.55), transparent),
+      radial-gradient(1px 1px at 45% 90%, rgba(255, 255, 255, 0.4), transparent),
+      radial-gradient(1px 1px at 10% 80%, rgba(255, 255, 255, 0.5), transparent);
+    background-size: 340px 340px;
+  }
+  .arcane-nebula::after {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(ellipse 55% 40% at 25% 30%, var(--tint-color, var(--primary)) 0%, transparent 60%);
+    opacity: 0.14;
+    animation: nebula-drift 30s ease-in-out infinite alternate;
+  }
+  /* nebula tint follows the tree's class color */
+  .arcane-nebula[data-tint="int"]::after   { --tint-color: var(--primary); }
+  .arcane-nebula[data-tint="str"]::after   { --tint-color: var(--streak); }
+  .arcane-nebula[data-tint="cha"]::after   { --tint-color: var(--cyan); }
+  .arcane-nebula[data-tint="craft"]::after { --tint-color: var(--chart-5); }
+  @keyframes nebula-drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-3%, 2%) scale(1.05); }
+  }
+
+  .arcane-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse 85% 85% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.65) 100%);
+  }
+
+  /* ---------- Pannable / zoomable viewport ---------- */
+  .arcane-viewport {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .arcane-viewport.grabbing {
+    cursor: grabbing;
+  }
+  .arcane-world {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+
+  /* ---------- Medallion nodes ---------- */
+  .medallion {
+    position: relative;
+    border-radius: 50%;
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+  }
+  .medallion:hover {
+    transform: scale(1.1);
+  }
+  .medallion-mastered {
+    border: 2.5px solid var(--chart-5);
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.18), transparent 45%),
+      radial-gradient(circle, color-mix(in oklab, var(--chart-5) 32%, var(--card)), var(--card) 78%);
+    box-shadow:
+      0 0 16px rgba(159, 196, 106, 0.6),
+      0 0 34px rgba(159, 196, 106, 0.25),
+      inset 0 0 8px rgba(159, 196, 106, 0.3);
+  }
+  .medallion-mastered::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(159, 196, 106, 0.4);
+  }
+  .medallion-active {
+    border: 2.5px solid var(--primary);
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.2), transparent 45%),
+      radial-gradient(circle, color-mix(in oklab, var(--primary) 38%, var(--card)), var(--card) 78%);
+    box-shadow:
+      0 0 18px rgba(201, 148, 58, 0.7),
+      0 0 40px rgba(201, 148, 58, 0.3),
+      inset 0 0 10px rgba(201, 148, 58, 0.35);
+    animation: medallion-flicker 2.4s ease-in-out infinite;
+  }
+  @keyframes medallion-flicker {
+    0%, 100% {
+      box-shadow: 0 0 18px rgba(201, 148, 58, 0.7), 0 0 40px rgba(201, 148, 58, 0.3), inset 0 0 10px rgba(201, 148, 58, 0.35);
+    }
+    50% {
+      box-shadow: 0 0 28px rgba(201, 148, 58, 1), 0 0 58px rgba(201, 148, 58, 0.45), inset 0 0 14px rgba(201, 148, 58, 0.5);
+    }
+  }
+  .medallion-locked {
+    border: 2.5px solid #3a3542;
+    background: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.04), transparent 45%), #16121e;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.75);
+    opacity: 0.85;
+  }
+  .chain-ring {
+    position: absolute;
+    inset: -9px;
+    border-radius: 50%;
+    border: 2px dashed rgba(154, 138, 108, 0.55);
+    pointer-events: none;
+  }
+
+  /* corner status seals — small badge instead of swapping the whole icon */
+  .status-seal {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--card);
+  }
+  .status-seal-mastered {
+    background: var(--chart-5);
+    color: #0d1a12;
+  }
+  .status-seal-locked {
+    background: #2a2632;
+    color: var(--muted-foreground);
+  }
+  .node-glyph {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  /* ---------- Labels (serif italic, matches the reference mockup) ---------- */
+  .node-label {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    font-style: italic;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    color: var(--foreground);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+  }
+  .node-label-locked {
+    color: var(--muted-foreground);
+  }
+
+  .view-badge {
+    position: absolute;
+    top: calc(100% + 26px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    border: 1px solid var(--primary);
+    background: rgba(201, 148, 58, 0.2);
+    color: var(--primary-foreground);
+    padding: 2px 6px;
+    font-family: var(--font-pixel), monospace;
+    font-size: 7px;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  /* ---------- Hover / tap tooltip ---------- */
+  .arcane-tooltip {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 30px);
+    transform: translateX(-50%);
+    width: 170px;
+    border: 2px solid var(--border);
+    background: var(--popover);
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6);
+    z-index: 20;
+  }
+  .arcane-tooltip-title {
+    font-family: var(--font-pixel), monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .arcane-tooltip-status {
+    font-family: var(--font-pixel), monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    margin-bottom: 5px;
+  }
+  .arcane-tooltip-status.status-mastered { color: var(--chart-5); }
+  .arcane-tooltip-status.status-active   { color: var(--primary); }
+  .arcane-tooltip-status.status-locked   { color: var(--muted-foreground); }
+  .arcane-tooltip-body {
+    font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    font-style: italic;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--popover-foreground);
+  }
+
+  /* ---------- Zoom controls + hint ---------- */
+  .arcane-controls {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .arcane-controls button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(230, 192, 105, 0.4);
+    background: linear-gradient(180deg, #2a1c37, #1a1122);
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+    transition: all 0.15s ease;
+  }
+  .arcane-controls button:hover {
+    box-shadow: 0 0 14px rgba(230, 192, 105, 0.5);
+    transform: scale(1.05);
+  }
+
+  .arcane-hint {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 10;
+    font-family: 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+    font-style: italic;
+    font-size: 10px;
+    color: var(--muted-foreground);
+    background: rgba(21, 13, 28, 0.6);
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+
+  /* ---------- Thread shimmer on the active connection ---------- */
+  .animate-thread-flow {
+    animation: thread-flow 1.3s linear infinite;
+  }
+  @keyframes thread-flow {
+    to { stroke-dashoffset: -16; }
   }
 }
