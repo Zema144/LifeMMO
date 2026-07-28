@@ -138,7 +138,6 @@ export function PageClient({
         const nodeQuests = questState[currentTree.id]?.filter((q) => node.questIds!.includes(q.id)) || []
         const firstPendingQuest = nodeQuests.find((q) => q.status !== "completed")
 
-        // Якщо знайшли незавершений квест, якого ще немає в прийнятих — беремо його автоматично
         if (firstPendingQuest && !acceptedQuestIds.includes(firstPendingQuest.id)) {
           handleAccept(firstPendingQuest.id)
         }
@@ -181,12 +180,25 @@ export function PageClient({
 
   const handleAbandon = () => {
     const abandoned = selected
+    
+    const abandonedTree = initialSkillTrees.find((t) => t.id === abandoned)
+    const abandonedQuestIds = abandonedTree ? abandonedTree.quests.map((q) => q.id) : []
+
+    setAcceptedQuestIds((prev) => prev.filter((id) => !abandonedQuestIds.includes(id)))
+
     setActiveTrees((prev) => {
       const next = prev.filter((treeId) => treeId !== selected)
       if (next.length) setSelected(next[0])
       return next.length ? next : prev
     })
     setOpenNode(null)
+
+    fetch("/api/quests/abandon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: currentUserId, treeId: abandoned }),
+    }).catch((err) => console.error("Failed to abandon tree quests on server:", err))
+
     posthog.capture(analyticsEvents.treeAbandoned, {
       tree_slug: abandoned,
     })
@@ -212,31 +224,45 @@ export function PageClient({
     <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col gap-4 px-4 pb-28 pt-5">
       {activeTab === "quests" && (
         <>
-          <PlayerHeader player={initialPlayer} />
-          <CharacterStats player={initialPlayer} />
-          {showDebuff && <DebuffBanner />}
-          <QuestLog quests={mainQuests} onComplete={handleComplete} />
+          <div className="animate-page-enter" style={{ animationDelay: "0ms" }}>
+            <PlayerHeader player={initialPlayer} />
+          </div>
+          <div className="animate-page-enter" style={{ animationDelay: "80ms" }}>
+            <CharacterStats player={initialPlayer} />
+          </div>
+          {showDebuff && (
+            <div className="animate-page-enter" style={{ animationDelay: "150ms" }}>
+              <DebuffBanner />
+            </div>
+          )}
+          <div className="animate-page-enter" style={{ animationDelay: "220ms" }}>
+            <QuestLog quests={mainQuests} onComplete={handleComplete} />
+          </div>
         </>
       )}
 
       {activeTab === "trees" && (
-        <SkillTreesView
-          skillTrees={initialSkillTrees}
-          tree={tree}
-          activeTrees={activeTrees}
-          selected={selected}
-          onSelect={handleSelect}
-          onExplore={() => {
-            setBrowseOpen(true)
-            posthog.capture(analyticsEvents.browseTreesOpened)
-          }}
-          onAbandon={handleAbandon}
-          onOpenNode={handleOpenNode}
-        />
+        <div className="animate-page-enter" style={{ animationDelay: "0ms" }}>
+          <SkillTreesView
+            skillTrees={initialSkillTrees}
+            tree={tree}
+            activeTrees={activeTrees}
+            selected={selected}
+            onSelect={handleSelect}
+            onExplore={() => {
+              setBrowseOpen(true)
+              posthog.capture(analyticsEvents.browseTreesOpened)
+            }}
+            onAbandon={handleAbandon}
+            onOpenNode={handleOpenNode}
+          />
+        </div>
       )}
 
       {activeTab === "profile" && (
-        <ProfileView player={initialPlayer} skillTrees={initialSkillTrees} activeTrees={activeTrees} />
+        <div className="animate-page-enter" style={{ animationDelay: "0ms" }}>
+          <ProfileView player={initialPlayer} skillTrees={initialSkillTrees} activeTrees={activeTrees} />
+        </div>
       )}
 
       <NodeDrawer

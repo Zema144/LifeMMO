@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image"
 import { Coins, Flame, Trophy } from "lucide-react"
 import { treeMastery, classColorClasses, type Player, type SkillTree, type SkillTreeId } from "@/lib/game-data"
@@ -15,7 +17,7 @@ export function ProfileView({
   const joined = skillTrees.filter((t) => activeTrees.includes(t.id))
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-400">
       <section className="hud-panel flex flex-col items-center gap-3 bg-card p-5 text-center">
         <div className="hud-inset size-24 overflow-hidden bg-secondary">
           <Image
@@ -23,7 +25,7 @@ export function ProfileView({
             alt={`${player.name}'s character avatar`}
             width={96}
             height={96}
-            className="pixelated size-full object-cover"
+            className="pixelated size-full object-cover animate-idle"
           />
         </div>
         <div>
@@ -40,24 +42,30 @@ export function ProfileView({
             {player.gold}G
           </span>
           <span className="flex items-center gap-1 border-2 border-border bg-streak/15 px-2 py-1 font-pixel text-[8px] leading-none text-streak">
-            <Flame className="size-3" aria-hidden="true" />
+            <Flame className="size-3 animate-flame" aria-hidden="true" />
             {player.streak} day streak
           </span>
         </div>
       </section>
 
       <section aria-label="Attributes" className="hud-panel bg-card p-4">
-        <p className="font-pixel text-[9px] uppercase text-muted-foreground">Attributes</p>
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {player.stats.map((stat) => {
+        <p className="font-pixel text-[9px] uppercase tracking-wider text-muted-foreground mb-3">Attributes</p>
+        <div className="grid grid-cols-4 gap-2">
+          {player.stats.map((stat, idx) => {
             const c = classColorClasses[stat.color]
             return (
               <div
                 key={stat.key}
-                className={`flex flex-col items-center gap-1.5 border-2 ${c.border} ${c.bg} py-3`}
+                className={`hud-panel relative overflow-hidden flex flex-col items-center justify-center gap-1 stat-card-bg py-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_15px_rgba(0,0,0,0.8)] ${c.border}`}
+                style={{ animationDelay: `${idx * 150}ms` }}
               >
-                <span className={`font-pixel text-sm leading-none ${c.text}`}>{stat.value}</span>
-                <span className="font-pixel text-[7px] uppercase text-muted-foreground">{stat.key}</span>
+                <div className={`absolute inset-0 opacity-15 blur-md ${c.bg}`} />
+                <span className={`relative z-10 font-pixel text-base leading-none ${c.text} animate-stat-hologram`}>
+                  {stat.value}
+                </span>
+                <span className="relative z-10 font-pixel text-[7px] uppercase tracking-wider text-muted-foreground">
+                  {stat.key}
+                </span>
               </div>
             )
           })}
@@ -70,21 +78,27 @@ export function ProfileView({
           <p className="font-pixel text-[9px] uppercase text-foreground">Joined Professions</p>
         </div>
         <div className="flex flex-col gap-2.5">
-          {joined.map((tree) => {
+          {joined.map((tree, idx) => {
             const c = classColorClasses[tree.classColor]
             const mastery = treeMastery(tree)
             return (
-              <div key={tree.id} className="hud-panel flex items-center gap-3 bg-card p-3">
-                <span className={`flex size-9 shrink-0 items-center justify-center border-2 ${c.border} ${c.bg}`}>
-                  <TreeIcon icon={tree.icon} className={`size-4 ${c.text}`} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-pixel text-[9px] leading-relaxed text-foreground">{tree.label}</p>
-                  <p className="mt-1 truncate text-[10px] text-muted-foreground">
-                    {tree.className} · LVL {tree.level}
-                  </p>
+              <div 
+                key={tree.id} 
+                className="animate-in slide-in-from-bottom-3 fade-in duration-500 fill-mode-both"
+                style={{ animationDelay: `${idx * 80}ms` }}
+              >
+                <div className="hud-panel flex items-center gap-3 bg-card p-3 transition-all duration-300 hover:border-primary/60 hover:shadow-[0_4px_15px_rgba(201,148,58,0.2)]">
+                  <span className={`flex size-9 shrink-0 items-center justify-center border-2 ${c.border} ${c.bg}`}>
+                    <TreeIcon icon={tree.icon} className={`size-4 ${c.text} animate-idle`} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-pixel text-[9px] leading-relaxed text-foreground">{tree.label}</p>
+                    <p className="mt-1 truncate text-[10px] text-muted-foreground">
+                      {tree.className} · LVL {tree.level}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 font-pixel text-[9px] leading-none ${c.text}`}>{mastery}%</span>
                 </div>
-                <span className={`shrink-0 font-pixel text-[9px] leading-none ${c.text}`}>{mastery}%</span>
               </div>
             )
           })}
