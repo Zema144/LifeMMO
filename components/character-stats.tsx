@@ -1,3 +1,5 @@
+"use client"
+
 import { Brain, Dumbbell, Gauge, MessageCircleHeart, ChefHat, type LucideIcon } from "lucide-react"
 import { classColorClasses, type ClassColor, type Player } from "@/lib/game-data"
 
@@ -11,34 +13,47 @@ const statIcon: Record<string, LucideIcon> = {
 
 const SEGMENTS = 10
 
+// Формула для визначення загального порогу XP рівня
+function getRequiredXpForLevel(level: number): number {
+  return Math.round(300 * Math.pow(level, 1.35))
+}
+
 export function CharacterStats({ player }: { player: Player }) {
-  // 1. Обмежуємо відсоток до максимуму 1 (100%), щоб не було переповнення
-  const pct = Math.min(player.xp / player.xpToNext, 1)
+  // 1. Рахуємо межі поточного рівня та скільки всього треба для цього левела
+  const currentLevelTotalNeeded = getRequiredXpForLevel(player.level)
+  const previousLevelTotalNeeded = getRequiredXpForLevel(player.level - 1)
+  const levelSpan = currentLevelTotalNeeded - previousLevelTotalNeeded
+  
+  // 2. Скільки гравці набрали досвіду всередині цього рівня
+  const progressInLevel = Math.max(0, player.xp - previousLevelTotalNeeded)
+  
+  // 3. Відсоток заповнення шкали (від 0 до 1)
+  const pct = Math.min(progressInLevel / levelSpan, 1)
   const filled = Math.round(pct * SEGMENTS)
   
-  // 2. Рахуємо залишок XP, не допускаючи від'ємних значень
-  const xpRemaining = Math.max(0, player.xpToNext - player.xp)
+  // 4. Залишок XP до наступного рівня беручи з бази (xpToNext)
+  const xpRemaining = Math.max(0, player.xpToNext)
+  const isReady = xpRemaining === 0 || progressInLevel >= levelSpan
 
   return (
     <section aria-label="Character progress" className="hud-panel bg-card p-4">
       <div className="mb-2 flex items-baseline justify-between">
         <span className="font-pixel text-[12px] text-foreground">LVL {player.level}</span>
         <span className="font-pixel text-[10px] text-muted-foreground">
-          {player.xp}/{player.xpToNext} XP
+          {progressInLevel}/{levelSpan} XP
         </span>
       </div>
 
       <div
         className="hud-inset flex gap-1 bg-background p-1"
         role="progressbar"
-        aria-valuenow={player.xp}
+        aria-valuenow={progressInLevel}
         aria-valuemin={0}
-        aria-valuemax={player.xpToNext}
+        aria-valuemax={levelSpan}
         aria-label="Experience to next level"
       >
         {Array.from({ length: SEGMENTS }).map((_, i) => {
           const isFilled = i < filled
-          // Пульсує тільки останній заповнений кубик
           const isLastFilled = i === filled - 1
 
           return (
@@ -57,9 +72,9 @@ export function CharacterStats({ player }: { player: Player }) {
       </div>
       
       <p className="mt-2 text-[11px] text-muted-foreground">
-        {xpRemaining > 0 
+        {!isReady 
           ? `${xpRemaining} XP to Level ${player.level + 1}` 
-          : "Level Up Ready!" /* Гарний напис, коли XP переповнено */}
+          : "Level Up Ready!"}
       </p>
 
       <div className="mt-4 grid grid-cols-4 gap-2">

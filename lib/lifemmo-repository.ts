@@ -8,6 +8,33 @@ export type TelegramUserInput = {
   avatarUrl?: string | null
 }
 
+// --- ФОРМУЛА РІВНЯ ТА ПРОГРЕСУ ---
+export function getRequiredXpForLevel(level: number): number {
+  return Math.round(300 * Math.pow(level, 1.35))
+}
+
+export function calculatePlayerProgress(currentXp: number, currentLevel: number, earnedXp: number) {
+  let newXp = currentXp + earnedXp
+  let newLevel = currentLevel
+
+  while (true) {
+    const xpNeededForNext = getRequiredXpForLevel(newLevel)
+    if (newXp < xpNeededForNext) break
+    newLevel++
+  }
+
+  // Залишок досвіду до наступного рівня
+  const nextLevelTotalXp = getRequiredXpForLevel(newLevel)
+  const xpToNext = Math.max(0, nextLevelTotalXp - newXp)
+
+  return {
+    xp: newXp,
+    level: newLevel,
+    xpToNext: xpToNext,
+  }
+}
+// ---------------------------------
+
 export async function upsertTelegramUser(input: TelegramUserInput) {
   const user = await prisma.user.upsert({
     where: { telegramId: input.telegramId },
@@ -132,6 +159,10 @@ export async function completeQuest(userId: string, questSlug: string) {
         id: true,
         xpReward: true,
         goldReward: true,
+        nodeId: true,
+        tree: {
+          select: { classColor: true },
+        },
       },
     })
 
@@ -155,11 +186,46 @@ export async function completeQuest(userId: string, questSlug: string) {
       },
     })
 
+    let statFieldUpdate = {}
+    if (quest.nodeId) {
+      const totalQuestsInNode = await tx.quest.count({
+        where: { nodeId: quest.nodeId },
+      })
+
+      const completedQuestsInNode = await tx.userQuest.count({
+        where: {
+          userId: userId,
+          status: "COMPLETED",
+          quest: {
+            nodeId: quest.nodeId,
+          },
+        },
+      })
+
+      if (totalQuestsInNode > 0 && totalQuestsInNode === completedQuestsInNode) {
+        const color = quest.tree.classColor
+        if (color === "INT") statFieldUpdate = { intStat: { increment: 1 } }
+        else if (color === "STR") statFieldUpdate = { strStat: { increment: 1 } }
+        else if (color === "CHA") statFieldUpdate = { chaStat: { increment: 1 } }
+        else if (color === "CRAFT") statFieldUpdate = { dexStat: { increment: 1 } }
+      }
+    }
+
+    const user = await tx.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { xp: true, level: true, gold: true },
+    })
+
+    const updatedProgress = calculatePlayerProgress(user.xp, user.level, quest.xpReward)
+
     return tx.user.update({
       where: { id: userId },
       data: {
-        xp: { increment: quest.xpReward },
+        xp: updatedProgress.xp,
+        level: updatedProgress.level,
+        xpToNext: updatedProgress.xpToNext,
         gold: { increment: quest.goldReward },
+        ...statFieldUpdate,
       },
     })
   })

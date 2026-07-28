@@ -43,6 +43,7 @@ export function PageClient({
   const [selected, setSelected] = useState<SkillTreeId>(initialActiveTrees[0] ?? initialSkillTrees[0].id)
   const [browseOpen, setBrowseOpen] = useState(false)
   const [openNode, setOpenNode] = useState<SkillNode | null>(null)
+  const [player, setPlayer] = useState<Player>(initialPlayer)
   const [acceptedQuestIds, setAcceptedQuestIds] = useState<string[]>(initialAcceptedQuestIds)
   const [questState, setQuestState] = useState<Record<string, Quest[]>>(() =>
     Object.fromEntries(initialSkillTrees.map((tree) => [tree.id, tree.quests])),
@@ -69,7 +70,7 @@ export function PageClient({
       .filter((quest): quest is Quest => quest !== null && quest.status !== "completed")
   }, [acceptedQuestIds, questState, treeIdByQuestId])
 
-  const handleComplete = (id: string) => {
+const handleComplete = (id: string) => {
     const entry = treeIdByQuestId[id]
     if (!entry) return
     const quest = entry.quest
@@ -86,7 +87,26 @@ export function PageClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: currentUserId, questSlug: id }),
     })
-      .then(() => {
+      .then(async (res) => {
+        const data = await res.json()
+        
+        if (data.user) {
+          setPlayer((prev) => ({
+            ...prev,
+            level: data.user.level,
+            xp: data.user.xp,
+            xpToNext: data.user.xpToNext,
+            gold: data.user.gold,
+            stats: prev.stats.map((stat) => {
+              if (stat.key === "INT") return { ...stat, value: data.user.intStat }
+              if (stat.key === "STR") return { ...stat, value: data.user.strStat }
+              if (stat.key === "DEX") return { ...stat, value: data.user.dexStat }
+              if (stat.key === "CHA") return { ...stat, value: data.user.chaStat }
+              return stat
+            }),
+          }))
+        }
+
         posthog.capture(analyticsEvents.questCompleted, {
           quest_slug: id,
           quest_title: quest.title,
@@ -94,13 +114,13 @@ export function PageClient({
         })
       })
       .catch(() => {
-      setQuestState((prev) => ({
-        ...prev,
-        [entry.treeId]: prev[entry.treeId].map((quest) =>
-          quest.id === id ? { ...quest, status: "active" } : quest,
-        ),
-      }))
-    })
+        setQuestState((prev) => ({
+          ...prev,
+          [entry.treeId]: prev[entry.treeId].map((quest) =>
+            quest.id === id ? { ...quest, status: "active" } : quest,
+          ),
+        }))
+      })
   }
 
   const handleAccept = (id: string) => {
@@ -225,10 +245,10 @@ export function PageClient({
       {activeTab === "quests" && (
         <>
           <div className="animate-page-enter" style={{ animationDelay: "0ms" }}>
-            <PlayerHeader player={initialPlayer} />
+            <PlayerHeader player={player} />
           </div>
           <div className="animate-page-enter" style={{ animationDelay: "80ms" }}>
-            <CharacterStats player={initialPlayer} />
+            <CharacterStats player={player} />
           </div>
           {showDebuff && (
             <div className="animate-page-enter" style={{ animationDelay: "150ms" }}>
@@ -261,7 +281,7 @@ export function PageClient({
 
       {activeTab === "profile" && (
         <div className="animate-page-enter" style={{ animationDelay: "0ms" }}>
-          <ProfileView player={initialPlayer} skillTrees={initialSkillTrees} activeTrees={activeTrees} />
+          <ProfileView player={player} skillTrees={initialSkillTrees} activeTrees={activeTrees} />
         </div>
       )}
 
