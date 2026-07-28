@@ -95,6 +95,11 @@
   * {
     @apply border-border;
   }
+  html, body {
+    overflow: hidden;
+    height: 100vh;
+    overscroll-behavior-y: none; /* ЗАХИСТ ВІД ЗГОРТАННЯ В ТЕЛЕГРАМІ */
+  }
   body {
     @apply bg-background text-foreground;
     background-image:

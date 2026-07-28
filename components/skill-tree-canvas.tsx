@@ -203,6 +203,7 @@ export function SkillTreeCanvas({
     }
   }
   function onPointerMove(e: React.PointerEvent) {
+    e.preventDefault();
     if (!pointers.current.has(e.pointerId)) return
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
 
