@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         strStat,
         dexStat,
         chaStat,
-        gender: gender || "male",
+        gender: gender === "female" ? "FEMALE" : "MALE",
         avatarSkin: avatarSkin || "light",
         avatarHair: avatarHair || "short",
         avatarArmor: avatarArmor || "cloth",
