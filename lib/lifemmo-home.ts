@@ -1,4 +1,8 @@
-import { upsertTelegramUser, getAcceptedQuestsForUser, getSkillTreesForUser } from "@/lib/lifemmo-repository"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import { prisma } from "@/lib/prisma"
+import { getAcceptedQuestsForUser, getSkillTreesForUser } from "@/lib/lifemmo-repository"
 import type { ClassColor, NodeStatus, Player, Quest, SkillNode, SkillTree } from "@/lib/game-data"
 
 const classColorMap = {
@@ -53,7 +57,7 @@ function toQuest(quest: {
   goldReward: number
   hasAiHelper: boolean
   statusDefault?: string
-  statRewardType?: any // Додаємо поле зі статом
+  statRewardType?: any
 }): Quest {
   return {
     id: quest.slug,
@@ -65,16 +69,58 @@ function toQuest(quest: {
     ],
     status: quest.statusDefault === "LOCKED" ? "locked" : "active",
     hasAiHelper: quest.hasAiHelper,
-    statRewardType: quest.statRewardType, // <--- ОСЬ ЦЕЙ РЯДОК ПЕРЕДАЄ СТАТ НА ФРОНТЕНД
+    statRewardType: quest.statRewardType,
   }
 }
 
 export async function getHomeData() {
-  const user = await upsertTelegramUser({
-    telegramId: "local-dev",
-    username: "georgiy",
-    firstName: "Georgiy",
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
+  let user = await prisma.user.findUnique({
+    where: { id: session.user.id },
   })
+
+  if (!user) {
+    redirect("/login")
+  }
+
+  const now = new Date()
+  let needsUpdate = false
+  let newStreak = user.streak
+
+  if (!user.lastLoginAt) {
+    newStreak = 1
+    needsUpdate = true
+  } else {
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    const lastLogin = new Date(user.lastLoginAt)
+    const lastLoginDay = new Date(Date.UTC(lastLogin.getUTCFullYear(), lastLogin.getUTCMonth(), lastLogin.getUTCDate()))
+
+    const diffTime = today.getTime() - lastLoginDay.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 1) {
+      newStreak += 1
+      needsUpdate = true
+    } else if (diffDays > 1) {
+      newStreak = 1
+      needsUpdate = true
+    }
+  }
+
+  if (needsUpdate) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        streak: newStreak,
+        lastLoginAt: now,
+      },
+    })
+  }
 
   const [trees, acceptedQuests] = await Promise.all([
     getSkillTreesForUser(user.id),

@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  url       = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -58,31 +58,75 @@ enum SubmissionStatus {
   REJECTED
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 model User {
-  id          String            @id @default(cuid())
-  telegramId  String            @unique
-  username    String?
-  firstName   String?
-  lastName    String?
-  avatarUrl   String?
-  title       String            @default("Novice Adventurer")
-  level       Int               @default(1)
-  xp          Int               @default(0)
-  xpToNext    Int               @default(1000)
-  gold        Int               @default(0)
-  streak      Int               @default(0)
-  strStat     Int               @default(5) @map("str")
-  intStat     Int               @default(5) @map("int")
-  dexStat     Int               @default(5) @map("dex")
-  chaStat     Int               @default(5) @map("cha")
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  joinedTrees UserSkillTree[]
-  quests      UserQuest[]
-  submissions QuestSubmission[]
-  debuffs     Debuff[]
+  id               String            @id @default(cuid())
+  name             String?
+  email            String?           @unique
+  emailVerified    DateTime?
+  image            String?
+  telegramId       String?           @unique
+  username         String?
+  firstName        String?
+  lastName         String?
+  avatarUrl        String?
+  title            String            @default("Novice Adventurer")
+  level            Int               @default(1)
+  xp               Int               @default(0)
+  xpToNext         Int               @default(1000)
+  gold             Int               @default(0)
+  streak           Int               @default(0)
+  strStat          Int               @default(5) @map("str")
+  intStat          Int               @default(5) @map("int")
+  dexStat          Int               @default(5) @map("dex")
+  chaStat          Int               @default(5) @map("cha")
+  gender           Gender?
+  isOnboardingDone Boolean           @default(false)
+  avatarConfig     Json?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  joinedTrees      UserSkillTree[]
+  quests           UserQuest[]
+  submissions      QuestSubmission[]
+  lastLoginAt      DateTime?
+  debuffs          Debuff[]
+  accounts         Account[]
+  sessions         Session[]
 
   @@map("users")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model SkillTree {
@@ -149,27 +193,27 @@ model SkillNodePrerequisite {
 }
 
 model Quest {
-  id              String             @id @default(cuid())
-  slug            String             @unique
+  id              String            @id @default(cuid())
+  slug            String            @unique
   treeId          String
   nodeId          String?
-  kind            QuestKind          @default(DAILY)
+  kind            QuestKind         @default(DAILY)
   title           String
   description     String
   statusDefault   QuestDefaultStatus @default(ACTIVE)
-  hasAiHelper     Boolean            @default(false)
-  xpReward        Int                @default(0)
-  goldReward      Int                @default(0)
+  hasAiHelper     Boolean           @default(false)
+  xpReward        Int               @default(0)
+  goldReward      Int               @default(0)
   statRewardType  StatKey?
   statRewardValue Int?
-  sortOrder       Int                @default(0)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  tree            SkillTree          @relation(fields: [treeId], references: [id], onDelete: Cascade)
-  node            SkillNode?         @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  sortOrder       Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  tree            SkillTree         @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  node            SkillNode?        @relation(fields: [nodeId], references: [id], onDelete: SetNull)
   users           UserQuest[]
   submissions     QuestSubmission[]
-  debuffs         Debuff[]           @relation("SourceQuestDebuffs")
+  debuffs         Debuff[]          @relation("SourceQuestDebuffs")
 
   @@index([treeId])
   @@index([nodeId])

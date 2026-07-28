@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from "@/components/auth-provider"
 import type { Metadata, Viewport } from 'next'
 import { Press_Start_2P, VT323 } from 'next/font/google'
 import { Providers } from './providers'
@@ -30,8 +31,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${vt323.variable} ${pressStart.variable}`}>
       <body className="bg-background font-sans antialiased">
-        <Providers>{children}</Providers>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <AuthProvider>
+          <Providers>{children}</Providers>
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </AuthProvider>
       </body>
     </html>
   )
