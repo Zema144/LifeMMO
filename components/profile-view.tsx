@@ -1,9 +1,9 @@
 "use client"
 
-import Image from "next/image"
 import { Coins, Flame, Trophy } from "lucide-react"
 import { treeMastery, classColorClasses, type Player, type SkillTree, type SkillTreeId } from "@/lib/game-data"
 import { TreeIcon } from "@/components/tree-icon"
+import { CharacterAvatar } from "@/components/character-avatar"
 
 export function ProfileView({
   player,
@@ -19,15 +19,18 @@ export function ProfileView({
   return (
     <div className="flex flex-col gap-4 animate-in fade-in duration-400">
       <section className="hud-panel flex flex-col items-center gap-3 bg-card p-5 text-center">
-        <div className="hud-inset size-24 overflow-hidden bg-secondary">
-          <Image
-            src="/avatar-wizard.png"
-            alt={`${player.name}'s character avatar`}
-            width={96}
-            height={96}
-            className="pixelated size-full object-cover animate-idle"
+        
+        {/* Динамічний аватар великого розміру (як в онбордингу) */}
+        <div className="animate-idle">
+          <CharacterAvatar 
+            gender={player.gender} 
+            skin={player.avatarSkin} 
+            hair={player.avatarHair} 
+            armor={player.avatarArmor} 
+            size="lg" 
           />
         </div>
+
         <div>
           <h1 className="font-pixel text-[13px] leading-relaxed text-foreground">{player.name}</h1>
           <p className="mt-1 text-xs text-muted-foreground">{player.title}</p>
@@ -48,6 +51,7 @@ export function ProfileView({
         </div>
       </section>
 
+      {/* Атрибути */}
       <section aria-label="Attributes" className="hud-panel bg-card p-4">
         <p className="font-pixel text-[9px] uppercase tracking-wider text-muted-foreground mb-3">Attributes</p>
         <div className="grid grid-cols-4 gap-2">
@@ -72,6 +76,7 @@ export function ProfileView({
         </div>
       </section>
 
+      {/* Професії */}
       <section aria-label="Joined professions" className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Trophy className="size-4 text-gold" aria-hidden="true" />

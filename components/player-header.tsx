@@ -1,21 +1,23 @@
-import Image from "next/image"
 import { Flame, Coins } from "lucide-react"
 import type { Player } from "@/lib/game-data"
+import { CharacterAvatar } from "@/components/character-avatar"
 
 export function PlayerHeader({ player }: { player: Player }) {
   return (
     <header className="hud-panel flex items-center gap-3 bg-card p-3">
       <div className="relative shrink-0">
-        <div className="hud-inset animate-idle size-16 overflow-hidden bg-secondary relative">
-          <Image
-            src="/avatar-wizard.png"
-            alt={`${player.name}'s character avatar`}
-            width={64}
-            height={64}
-            className="pixelated size-full object-cover"
-            priority
+        
+        {/* Аватар маленького розміру */}
+        <div className="animate-idle">
+          <CharacterAvatar 
+            gender={player.gender} 
+            skin={player.avatarSkin} 
+            hair={player.avatarHair} 
+            armor={player.avatarArmor} 
+            size="sm" 
           />
         </div>
+
         <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap border-2 border-border bg-primary px-1.5 py-1 font-pixel text-[8px] leading-none text-primary-foreground z-10">
           LV {player.level}
         </span>

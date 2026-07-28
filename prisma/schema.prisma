@@ -71,7 +71,7 @@ model User {
   image            String?
   telegramId       String?           @unique
   username         String?
-  firstName        String?
+  firstName        String?           @unique
   lastName         String?
   avatarUrl        String?
   title            String            @default("Novice Adventurer")
@@ -94,8 +94,12 @@ model User {
   submissions      QuestSubmission[]
   lastLoginAt      DateTime?
   debuffs          Debuff[]
+  isOnboarded      Boolean           @default(false)
   accounts         Account[]
   sessions         Session[]
+  avatarSkin       String            @default("light") 
+  avatarHair       String            @default("short") 
+  avatarArmor      String            @default("cloth") 
 
   @@map("users")
 }

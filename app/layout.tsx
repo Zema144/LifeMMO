@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${vt323.variable} ${pressStart.variable}`}>
+    <html lang="en" className={`${vt323.variable} ${pressStart.variable}`} suppressHydrationWarning>
       <body className="bg-background font-sans antialiased">
         <AuthProvider>
           <Providers>{children}</Providers>
