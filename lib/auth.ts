@@ -11,27 +11,20 @@ function verifyTelegramWebAppData(telegramInitData: string) {
   try {
     const urlParams = new URLSearchParams(telegramInitData)
     const hash = urlParams.get("hash")
-
     if (!hash) return null
 
-    const pairs: string[] = []
-    telegramInitData.split("&").forEach((pair) => {
-      const [key, value] = pair.split("=")
-      if (key !== "hash") {
-        pairs.push(`${key}=${value}`)
-      }
-    })
+    urlParams.delete("hash")
 
-    // Сортуємо параметри за алфавітом
-    const dataToCheck = pairs.sort().join("\n")
+    const dataToCheck = Array.from(urlParams.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n")
 
-    // Створюємо секретний ключ на основі токена бота
     const secretKey = crypto
       .createHmac("sha256", "WebAppData")
       .update(process.env.TELEGRAM_BOT_TOKEN || "")
       .digest()
 
-    // Хешуємо дані і порівнюємо з отриманим хешем
     const calculatedHash = crypto
       .createHmac("sha256", secretKey)
       .update(dataToCheck)
@@ -39,7 +32,7 @@ function verifyTelegramWebAppData(telegramInitData: string) {
 
     if (calculatedHash === hash) {
       const userParam = urlParams.get("user")
-      return userParam ? JSON.parse(decodeURIComponent(userParam)) : null
+      return userParam ? JSON.parse(userParam) : null
     }
 
     return null

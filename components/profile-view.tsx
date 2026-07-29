@@ -1,7 +1,8 @@
 "use client"
 
-import { Coins, Flame, Trophy } from "lucide-react"
+import { Coins, Flame, Trophy, LogOut } from "lucide-react"
 import { treeMastery, classColorClasses, type Player, type SkillTree, type SkillTreeId } from "@/lib/game-data"
+import { signOut } from "next-auth/react"
 import { TreeIcon } from "@/components/tree-icon"
 import { CharacterAvatar } from "@/components/character-avatar"
 
@@ -109,6 +110,14 @@ export function ProfileView({
           })}
         </div>
       </section>
+      <button
+        type="button"
+        onClick={() => signOut({ callbackUrl: "/login" })}
+        className="flex items-center justify-center gap-2 border-2 border-destructive/60 bg-destructive/10 p-3 font-pixel text-[9px] uppercase text-destructive transition-colors hover:bg-destructive/20"
+      >
+        <LogOut className="size-4" aria-hidden="true" />
+        Log Out
+      </button>
     </div>
   )
 }
