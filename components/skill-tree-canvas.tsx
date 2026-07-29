@@ -7,11 +7,10 @@ import { TreeIcon } from "@/components/tree-icon"
 
 const NODE_SPACING = 150
 const LEVEL_HEIGHT = 190
-const BEND = 26 // fixed arc bend — matches the HTML mockup, not distance-scaled
+const BEND = 26
 const JITTER_X = 22
 const JITTER_Y = 16
 
-// per-status medallion radius (mastered / active / locked read differently in size, like the mockup)
 const RADIUS: Record<SkillNode["status"], number> = {
   mastered: 32,
   active: 35,
@@ -27,17 +26,6 @@ function hashId(id: string) {
   return h
 }
 
-/**
- * Automatic layered layout (Sugiyama-style), centered around (0,0):
- * 1. depth(node) = 1 + max(depth(prereq)) — roots get depth 0
- * 2. group nodes into rows by depth
- * 3. barycenter pass: reorder each row by the average x of its prereqs
- * 4. center every row, then center the whole tree, then add a small
- *    deterministic per-node jitter so it reads as a hand-placed
- *    constellation rather than a rigid flowchart grid.
- *
- * Works for any node count/shape — game-data's x/y fields are ignored.
- */
 function computeLayout(nodes: SkillNode[]): Record<string, Point> {
   const byId = Object.fromEntries(nodes.map((n) => [n.id, n]))
   const depth: Record<string, number> = {}
@@ -106,7 +94,6 @@ function computeLayout(nodes: SkillNode[]): Record<string, Point> {
     p.y -= midY
   })
 
-  // organic jitter — deterministic per id, so it's stable across re-renders
   nodes.forEach((n) => {
     const h = hashId(n.id)
     positions[n.id].x += (h % (JITTER_X * 2)) - JITTER_X
@@ -178,7 +165,6 @@ export function SkillTreeCanvas({
     [tree.nodes, layout, nodesById],
   )
 
-  // ---------- pan & zoom via Pointer Events ----------
   const viewportRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: -40 })
@@ -188,7 +174,27 @@ export function SkillTreeCanvas({
   const lastPos = useRef<Point>({ x: 0, y: 0 })
   const pinchStart = useRef<{ dist: number; scale: number } | null>(null)
 
+  function preventTelegramSwipe() {
+    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp
+      if (!tg.isExpanded) tg.expand()
+      if (tg.disableVerticalSwipes) tg.disableVerticalSwipes()
+    }
+  }
+
+  function enableTelegramSwipe() {
+    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp?.enableVerticalSwipes) {
+      (window as any).Telegram.WebApp.enableVerticalSwipes()
+    }
+  }
+
+  useEffect(() => {
+    preventTelegramSwipe()
+    return () => enableTelegramSwipe()
+  }, [])
+
   function onPointerDown(e: React.PointerEvent) {
+    preventTelegramSwipe()
     ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointers.current.size === 1) {
@@ -204,7 +210,6 @@ export function SkillTreeCanvas({
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    // ЗАХИСТ ВІД СКРОЛУ СТОРІНКИ ПІД ЧАС ДРАГУ
     if (pointers.current.size > 0 && e.cancelable) {
       e.preventDefault()
     }
@@ -260,7 +265,6 @@ export function SkillTreeCanvas({
 
       <div
         ref={viewportRef}
-        // ДОДАЛИ КЛАС "touch-none", ЩОБ БРАУЗЕР НЕ ПЕРЕХОПЛЮВАВ ЖЕСТИ
         className={`arcane-viewport touch-none ${isDragging ? "grabbing" : ""}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -268,7 +272,6 @@ export function SkillTreeCanvas({
         onPointerCancel={onPointerEnd}
       >
         <div className="arcane-world" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}>
-          {/* ... решта твого коду з SVG та нодами залишається без змін ... */}
           <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden="true">
             <defs>
               <filter id={`thread-glow-${tree.id}`} x="-80%" y="-80%" width="260%" height="260%">
@@ -360,7 +363,6 @@ function NodeTile({
 }) {
   const reqs = prereqLabels(tree, node)
   const size = RADIUS[node.status] * 2
-  // optional per-node emoji glyph — add `icon?: string` to SkillNode in game-data.ts to use this
   const customIcon = (node as SkillNode & { icon?: string }).icon
   const customDesc = (node as SkillNode & { desc?: string }).desc
 

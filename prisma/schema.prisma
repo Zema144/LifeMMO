@@ -228,6 +228,7 @@ model UserQuest {
   id          String          @id @default(cuid())
   userId      String
   questId     String
+  expiresAt   DateTime?  
   status      UserQuestStatus @default(ACCEPTED)
   acceptedAt  DateTime        @default(now())
   completedAt DateTime?

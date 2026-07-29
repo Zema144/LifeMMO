@@ -5,6 +5,7 @@ export type SkillTreeId =
   | "finance"
   | "language"
   | "music"
+  | string // Додаємо можливість будь-якого стрінга, бо з бази можуть прийти нові ID
 
 export type Reward = {
   label: string
@@ -22,11 +23,11 @@ export type Quest = {
   rewards: Reward[]
   status: QuestStatus
   hasAiHelper?: boolean
-  statRewardType?: StatKey // ДОДАНО: Синхронізація з базою даних для виклику правильного ментора
+  statRewardType?: StatKey 
+  expiresAt?: string // Додано для таймера дейліків
 }
 
 export type ClassColor = "int" | "str" | "cha" | "craft"
-
 
 export type NodeStatus = "mastered" | "active" | "locked"
 
@@ -48,306 +49,41 @@ export type SkillTree = {
   label: string
   className: string
   blurb: string
-  icon: "brain" | "dumbbell" | "chef" | "coins" | "languages" | "music"
+  icon: "brain" | "dumbbell" | "chef" | "coins" | "languages" | "music" | string
   classColor: ClassColor
   level: number
   quests: Quest[]
   nodes: SkillNode[]
 }
 
-export const skillTrees: SkillTree[] = [
-  {
-    id: "data-engineering",
-    label: "Data Engineering",
-    className: "Data Wizard",
-    blurb: "Bend databases and pipelines to your will.",
-    icon: "brain",
-    classColor: "int",
-    level: 5,
-    quests: [
-      {
-        id: "de-1",
-        title: "Master PostgreSQL JOINs",
-        description: "Write a SQL query using INNER JOIN and LEFT JOIN.",
-        rewards: [
-          { label: "150 XP", kind: "xp" },
-          { label: "20", kind: "gold" },
-        ],
-        status: "active",
-        hasAiHelper: true,
-        statRewardType: "INT", // Маг Елдор
-      },
-      {
-        id: "de-2",
-        title: "Index a Slow Query",
-        description: "Add a B-tree index and measure the speedup with EXPLAIN.",
-        rewards: [{ label: "90 XP", kind: "xp" }],
-        status: "active",
-        statRewardType: "INT",
-      },
-      {
-        id: "de-3",
-        title: "Read the Docs",
-        description: "Read 15 pages of the PostgreSQL internals manual.",
-        rewards: [{ label: "50 XP", kind: "xp" }],
-        status: "completed",
-        statRewardType: "INT",
-      },
-    ],
-    nodes: [
-      { id: "de-n1", label: "Python Basics", status: "mastered", x: 8, y: 8, prereqs: [] },
-      { id: "de-n2", label: "SQL Fundamentals", status: "mastered", x: 200, y: 8, prereqs: [] },
-      {
-        id: "de-n3",
-        label: "PostgreSQL Internals",
-        status: "active",
-        x: 200,
-        y: 140,
-        prereqs: ["de-n2"],
-        questIds: ["de-1", "de-2", "de-3"],
-      },
-      { id: "de-n4", label: "SQLAlchemy ORM", status: "locked", x: 104, y: 272, prereqs: ["de-n1", "de-n2"] },
-      { id: "de-n5", label: "Airflow Pipelines", status: "locked", x: 200, y: 272, prereqs: ["de-n3"] },
-    ],
-  },
-  {
-    id: "fitness",
-    label: "Fitness & Gym",
-    className: "Iron Warrior",
-    blurb: "Forge raw Strength through daily training.",
-    icon: "dumbbell",
-    classColor: "str",
-    level: 3,
-    quests: [
-      {
-        id: "fit-1",
-        title: "Push Day Session",
-        description: "Complete 4 sets of bench press and shoulder work.",
-        rewards: [
-          { label: "120 XP", kind: "xp" },
-          { label: "15", kind: "gold" },
-        ],
-        status: "active",
-        hasAiHelper: true,
-        statRewardType: "STR", // Огр Громгар
-      },
-      {
-        id: "fit-2",
-        title: "10k Steps",
-        description: "Walk at least 10,000 steps before sunset.",
-        rewards: [{ label: "40 XP", kind: "xp" }],
-        status: "active",
-        statRewardType: "STR",
-      },
-    ],
-    nodes: [
-      { id: "fit-n1", label: "Cardio Base", status: "mastered", x: 8, y: 8, prereqs: [] },
-      { id: "fit-n2", label: "Strength Foundations", status: "mastered", x: 200, y: 8, prereqs: [] },
-      {
-        id: "fit-n3",
-        label: "Push / Pull Split",
-        status: "active",
-        x: 104,
-        y: 140,
-        prereqs: ["fit-n1", "fit-n2"],
-        questIds: ["fit-1", "fit-2"],
-      },
-      { id: "fit-n4", label: "Hypertrophy Block", status: "locked", x: 104, y: 272, prereqs: ["fit-n3"] },
-    ],
-  },
-  {
-    id: "culinary",
-    label: "Culinary Art",
-    className: "Master Chef",
-    blurb: "Craft legendary meals from raw ingredients.",
-    icon: "chef",
-    classColor: "craft",
-    level: 1,
-    quests: [
-      {
-        id: "cul-1",
-        title: "Cook a Fresh Meal",
-        description: "Prepare a balanced meal from raw ingredients.",
-        rewards: [
-          { label: "100 XP", kind: "xp" },
-          { label: "25", kind: "gold" },
-        ],
-        status: "active",
-        hasAiHelper: true,
-        statRewardType: "CRAFT", // Маг Елдор (за налаштуваннями твого mentors.ts)
-      },
-      {
-        id: "cul-2",
-        title: "Master a New Knife Cut",
-        description: "Practice the julienne or brunoise technique.",
-        rewards: [{ label: "60 XP", kind: "xp" }],
-        status: "active",
-        statRewardType: "CRAFT",
-      },
-    ],
-    nodes: [
-      { id: "cul-n1", label: "Knife Skills", status: "mastered", x: 8, y: 8, prereqs: [] },
-      {
-        id: "cul-n2",
-        label: "Fresh Cooking",
-        status: "active",
-        x: 8,
-        y: 140,
-        prereqs: ["cul-n1"],
-        questIds: ["cul-1", "cul-2"],
-      },
-      { id: "cul-n3", label: "Baking & Pastry", status: "locked", x: 200, y: 140, prereqs: ["cul-n1"] },
-      { id: "cul-n4", label: "Fermentation", status: "locked", x: 104, y: 272, prereqs: ["cul-n2", "cul-n3"] },
-    ],
-  },
-  {
-    id: "finance",
-    label: "Personal Finance",
-    className: "Gold Merchant",
-    blurb: "Grow your hoard and master the market.",
-    icon: "coins",
-    classColor: "cha",
-    level: 2,
-    quests: [
-      {
-        id: "fin-1",
-        title: "Track This Week's Spend",
-        description: "Log every expense for 7 days in a budget sheet.",
-        rewards: [
-          { label: "90 XP", kind: "xp" },
-          { label: "30", kind: "gold" },
-        ],
-        status: "active",
-        hasAiHelper: true,
-        statRewardType: "CHA", // Ельфійка Лірана
-      },
-      {
-        id: "fin-2",
-        title: "Read One Market Article",
-        description: "Study a piece on index funds or compounding.",
-        rewards: [{ label: "45 XP", kind: "xp" }],
-        status: "active",
-        statRewardType: "CHA",
-      },
-    ],
-    nodes: [
-      { id: "fin-n1", label: "Budgeting", status: "mastered", x: 8, y: 8, prereqs: [] },
-      {
-        id: "fin-n2",
-        label: "Expense Tracking",
-        status: "active",
-        x: 104,
-        y: 140,
-        prereqs: ["fin-n1"],
-        questIds: ["fin-1", "fin-2"],
-      },
-      { id: "fin-n3", label: "Investing 101", status: "locked", x: 104, y: 272, prereqs: ["fin-n2"] },
-    ],
-  },
-  {
-    id: "language",
-    label: "Language Learning",
-    className: "Silver Tongue",
-    blurb: "Unlock new tongues and charm the realm.",
-    icon: "languages",
-    classColor: "cha",
-    level: 2,
-    quests: [
-      {
-        id: "lang-1",
-        title: "Complete a Vocab Set",
-        description: "Learn 20 new words and review yesterday's set.",
-        rewards: [
-          { label: "80 XP", kind: "xp" },
-          { label: "10", kind: "gold" },
-        ],
-        status: "active",
-        hasAiHelper: true,
-        statRewardType: "CHA", // Ельфійка Лірана
-      },
-      {
-        id: "lang-2",
-        title: "Speak for 5 Minutes",
-        description: "Hold a short conversation out loud, no notes.",
-        rewards: [{ label: "55 XP", kind: "xp" }],
-        status: "active",
-        statRewardType: "CHA",
-      },
-    ],
-    nodes: [
-      { id: "lang-n1", label: "Alphabet", status: "mastered", x: 8, y: 8, prereqs: [] },
-      {
-        id: "lang-n2",
-        label: "Core Vocab",
-        status: "active",
-        x: 104,
-        y: 140,
-        prereqs: ["lang-n1"],
-        questIds: ["lang-1", "lang-2"],
-      },
-      { id: "lang-n3", label: "Conversation", status: "locked", x: 104, y: 272, prereqs: ["lang-n2"] },
-    ],
-  },
-  {
-    id: "music",
-    label: "Music & Instrument",
-    className: "Bard",
-    blurb: "Practice your craft and enchant listeners.",
-    icon: "music",
-    classColor: "craft",
-    level: 1,
-    quests: [
-      {
-        id: "mus-1",
-        title: "Practice Scales",
-        description: "Run through major and minor scales for 15 minutes.",
-        rewards: [
-          { label: "70 XP", kind: "xp" },
-          { label: "12", kind: "gold" },
-        ],
-        status: "active",
-        hasAiHelper: true,
-        statRewardType: "CRAFT",
-      },
-      {
-        id: "mus-2",
-        title: "Learn a New Riff",
-        description: "Memorize 8 bars of a song you love.",
-        rewards: [{ label: "60 XP", kind: "xp" }],
-        status: "active",
-        statRewardType: "CRAFT",
-      },
-    ],
-    nodes: [
-      { id: "mus-n1", label: "Music Theory", status: "mastered", x: 8, y: 8, prereqs: [] },
-      {
-        id: "mus-n2",
-        label: "Scales & Technique",
-        status: "active",
-        x: 104,
-        y: 140,
-        prereqs: ["mus-n1"],
-        questIds: ["mus-1", "mus-2"],
-      },
-      { id: "mus-n3", label: "First Song", status: "locked", x: 104, y: 272, prereqs: ["mus-n2"] },
-    ],
-  },
-]
+export type PlayerStat = {
+  key: string
+  label: string
+  value: number
+  color: ClassColor
+}
 
-export const defaultActiveTrees: SkillTreeId[] = ["data-engineering", "fitness", "culinary"]
+export type Player = {
+  name: string
+  title: string
+  level: number
+  streak: number
+  xp: number
+  xpToNext: number
+  gold: number
+  gender?: string
+  avatarSkin?: string
+  avatarHair?: string
+  avatarArmor?: string
+  hasDebuff?: boolean // Додано для контролю банера штрафів
+  stats: PlayerStat[]
+}
 
-/** Quests already accepted into the player's main Quest Log on first load. */
-export const defaultAcceptedQuestIds: string[] = ["de-1", "de-2", "fit-1", "cul-1"]
-
-/** Flatten every quest across all trees into an id -> quest map. */
-export function questIndex(): Record<string, { quest: Quest; treeId: SkillTreeId }> {
-  const index: Record<string, { quest: Quest; treeId: SkillTreeId }> = {}
-  for (const tree of skillTrees) {
-    for (const quest of tree.quests) {
-      index[quest.id] = { quest, treeId: tree.id }
-    }
-  }
-  return index
+export const classColorClasses: Record<ClassColor, { text: string; border: string; bg: string }> = {
+  int: { text: "text-primary", border: "border-primary", bg: "bg-primary/15" },
+  str: { text: "text-streak", border: "border-streak", bg: "bg-streak/15" },
+  cha: { text: "text-cyan", border: "border-cyan", bg: "bg-cyan/15" },
+  craft: { text: "text-chart-5", border: "border-chart-5", bg: "bg-chart-5/15" },
 }
 
 /** Percent of a tree's nodes that are mastered (0-100). */
@@ -362,29 +98,4 @@ export function prereqLabels(tree: SkillTree, node: SkillNode): string[] {
   return node.prereqs
     .map((id) => tree.nodes.find((n) => n.id === id)?.label)
     .filter((l): l is string => Boolean(l))
-}
-
-export const player = {
-  name: "Georgiy",
-  title: "Junior Data Wizard",
-  level: 5,
-  streak: 7,
-  xp: 750,
-  xpToNext: 1000,
-  gold: 340,
-  stats: [
-    { key: "INT", label: "Intelligence", value: 14, color: "int" as ClassColor },
-    { key: "STR", label: "Strength", value: 8, color: "str" as ClassColor },
-    { key: "CHA", label: "Charisma", value: 10, color: "cha" as ClassColor },
-    { key: "CRAFT", label: "Crafting", value: 6, color: "craft" as ClassColor },
-  ],
-}
-
-export type Player = typeof player
-
-export const classColorClasses: Record<ClassColor, { text: string; border: string; bg: string }> = {
-  int: { text: "text-primary", border: "border-primary", bg: "bg-primary/15" },
-  str: { text: "text-streak", border: "border-streak", bg: "bg-streak/15" },
-  cha: { text: "text-cyan", border: "border-cyan", bg: "bg-cyan/15" },
-  craft: { text: "text-chart-5", border: "border-chart-5", bg: "bg-chart-5/15" },
 }

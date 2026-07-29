@@ -18,24 +18,33 @@ const nodeStatusMap = {
   LOCKED: "locked",
 } as const satisfies Record<string, NodeStatus>
 
-function toPlayer(user: {
-  firstName: string | null
-  username: string | null
-  title: string
-  level: number
-  streak: number
-  xp: number
-  xpToNext: number
-  gold: number
-  intStat: number
-  strStat: number
-  dexStat: number
-  chaStat: number
-  gender?: string | null
-  avatarSkin?: string | null
-  avatarHair?: string | null
-  avatarArmor?: string | null
-}): Player {
+// Додаємо activeDebuffs як другий аргумент
+function toPlayer(
+  user: {
+    firstName: string | null
+    username: string | null
+    title: string
+    level: number
+    streak: number
+    xp: number
+    xpToNext: number
+    gold: number
+    intStat: number
+    strStat: number
+    dexStat: number
+    chaStat: number
+    gender?: string | null
+    avatarSkin?: string | null
+    avatarHair?: string | null
+    hasDebuff: activeDebuffs.length > 0,
+    avatarArmor?: string | null
+  },
+  activeDebuffs: { stat: string; value: number }[]
+): Player {
+  // Функція для підрахунку сумарного дебафу на конкретну характеристику
+  const getDebuff = (statKey: string) => 
+    activeDebuffs.filter((d) => d.stat === statKey).reduce((acc, d) => acc + d.value, 0)
+
   return {
     name: user.firstName ?? user.username ?? "Georgiy",
     title: user.title,
@@ -44,15 +53,16 @@ function toPlayer(user: {
     xp: user.xp,
     xpToNext: user.xpToNext,
     gold: user.gold,
-    gender: user.gender?.toLowerCase() || "male", // toLowerCase бо Prisma може повертати MALE
+    gender: user.gender?.toLowerCase() || "male",
     avatarSkin: user.avatarSkin || "light",
     avatarHair: user.avatarHair || "short",
     avatarArmor: user.avatarArmor || "cloth",
     stats: [
-      { key: "INT", label: "Intelligence", value: user.intStat, color: "int" },
-      { key: "STR", label: "Strength", value: user.strStat, color: "str" },
-      { key: "DEX", label: "Dexterity", value: user.dexStat, color: "craft" },
-      { key: "CHA", label: "Charisma", value: user.chaStat, color: "cha" },
+      // Віднімаємо дебафи (але не даємо характеристиці впасти нижче 1)
+      { key: "INT", label: "Intelligence", value: Math.max(1, user.intStat - getDebuff("INT")), color: "int" },
+      { key: "STR", label: "Strength", value: Math.max(1, user.strStat - getDebuff("STR")), color: "str" },
+      { key: "DEX", label: "Dexterity", value: Math.max(1, user.dexStat - getDebuff("DEX")), color: "craft" },
+      { key: "CHA", label: "Charisma", value: Math.max(1, user.chaStat - getDebuff("CHA")), color: "cha" },
     ],
   }
 }
@@ -66,7 +76,7 @@ function toQuest(quest: {
   hasAiHelper: boolean
   statusDefault?: string
   statRewardType?: any
-}): Quest {
+}, userQuestExpiresAt?: Date | null): Quest {
   return {
     id: quest.slug,
     title: quest.title,
@@ -78,6 +88,8 @@ function toQuest(quest: {
     status: quest.statusDefault === "LOCKED" ? "locked" : "active",
     hasAiHelper: quest.hasAiHelper,
     statRewardType: quest.statRewardType,
+    // Прокидаємо час для візуального таймера
+    expiresAt: userQuestExpiresAt ? userQuestExpiresAt.toISOString() : undefined,
   }
 }
 
@@ -100,8 +112,46 @@ export async function getHomeData() {
   let needsUpdate = false
   let newStreak = user.streak
 
+  // --- 1. ПЕРЕВІРКА ПРОСТРОЧЕНИХ КВЕСТІВ ТА ДЕБАФІВ ---
+  const expiredQuests = await prisma.userQuest.findMany({
+    where: {
+      userId: user.id,
+      status: "ACCEPTED",
+      expiresAt: { lt: now }, // Час вийшов
+    },
+    include: {
+      quest: true,
+    },
+  })
+
+  if (expiredQuests.length > 0) {
+    needsUpdate = true
+    newStreak = 1 // Скидаємо стрік за провал дейліка
+
+    for (const expired of expiredQuests) {
+      // Відмічаємо квест як провалений
+      await prisma.userQuest.update({
+        where: { id: expired.id },
+        data: { status: "FAILED", failedAt: now },
+      })
+
+      // Створюємо запис у таблиці debuffs
+      // (Тут за замовчуванням штрафуємо STR на 1, але ти можеш адаптувати логіку під свої потреби)
+      await prisma.debuff.create({
+        data: {
+          userId: user.id,
+          sourceQuestId: expired.questId,
+          stat: "STR", // Відповідає твоєму enum statkey
+          value: 1,    
+          reason: `Failed daily quest: ${expired.quest.title}`,
+        },
+      })
+    }
+  }
+
+  // --- 2. ЛОГІКА СТРІКА (ВХОДИ) ---
   if (!user.lastLoginAt) {
-    newStreak = 1
+    newStreak = expiredQuests.length > 0 ? 1 : 1
     needsUpdate = true
   } else {
     const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
@@ -112,7 +162,7 @@ export async function getHomeData() {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays === 1) {
-      newStreak += 1
+      newStreak = expiredQuests.length > 0 ? 1 : newStreak + 1
       needsUpdate = true
     } else if (diffDays > 1) {
       newStreak = 1
@@ -130,25 +180,42 @@ export async function getHomeData() {
     })
   }
 
+  // --- 3. ВИТЯГУЄМО АКТИВНІ ДЕБАФИ З БАЗИ ---
+  const activeDebuffs = await prisma.debuff.findMany({
+    where: {
+      userId: user.id,
+      resolvedAt: null, // Тільки ті, які ще діють
+    },
+  })
+
+  // --- 4. ФОРМУЄМО ДАНІ ДЛЯ КЛІЄНТА ---
   const [trees, acceptedQuests] = await Promise.all([
     getSkillTreesForUser(user.id),
     getAcceptedQuestsForUser(user.id),
   ])
 
+  // Мапа для швидкого доступу до прийнятих квестів (щоб витягнути expiresAt)
+  const acceptedQuestMap = new Map(acceptedQuests.map((entry) => [entry.quest.slug, entry]))
+  
   const completedQuestIds = new Set(
-    acceptedQuests.filter((entry) => entry.status === "COMPLETED").map((entry) => entry.quest.slug),
+    acceptedQuests.filter((entry) => entry.status === "COMPLETED").map((entry) => entry.quest.slug)
   )
 
   const skillTrees: SkillTree[] = trees.map((tree) => {
     const questByNode = new Map<string, Quest[]>()
     const treeQuests = tree.quests.map((quest) => {
-      const mapped = toQuest(quest)
+      
+      const userQuest = acceptedQuestMap.get(quest.slug)
+      const mapped = toQuest(quest, userQuest?.expiresAt)
+      
       if (completedQuestIds.has(quest.slug)) {
         mapped.status = "completed"
       }
+      
       if (quest.nodeId) {
         questByNode.set(quest.nodeId, [...(questByNode.get(quest.nodeId) ?? []), mapped])
       }
+      
       return mapped
     })
 
@@ -179,9 +246,11 @@ export async function getHomeData() {
 
   return {
     currentUserId: user.id,
-    player: toPlayer(user),
+    player: toPlayer(user, activeDebuffs),
     skillTrees,
     activeTrees,
-    acceptedQuestIds: acceptedQuests.map((entry) => entry.quest.slug),
+    acceptedQuestIds: acceptedQuests
+      .filter((entry) => entry.status !== "FAILED") // Не відправляємо провалені квести як активні
+      .map((entry) => entry.quest.slug),
   }
 }

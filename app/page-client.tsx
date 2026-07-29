@@ -52,7 +52,7 @@ export function PageClient({
   const treeIdByQuestId = useMemo(() => questIndex(initialSkillTrees), [initialSkillTrees])
   const tree = useMemo(() => initialSkillTrees.find((item) => item.id === selected)!, [initialSkillTrees, selected])
   const treeQuests = questState[selected] ?? []
-  const showDebuff = activeTrees.includes("fitness") && activeTab === "quests"
+  const showDebuff = player.hasDebuff && activeTab === "quests"
 
   const drawerQuests = useMemo(() => {
     if (!openNode?.questIds) return []
