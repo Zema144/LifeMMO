@@ -11,15 +11,7 @@ function verifyTelegramWebAppData(telegramInitData: string) {
   try {
     const urlParams = new URLSearchParams(telegramInitData)
     const hash = urlParams.get("hash")
-
-    console.log("[tg-auth] initData length:", telegramInitData.length)
-    console.log("[tg-auth] hash present:", !!hash)
-    console.log("[tg-auth] TELEGRAM_BOT_TOKEN present:", !!process.env.TELEGRAM_BOT_TOKEN, "length:", process.env.TELEGRAM_BOT_TOKEN?.length)
-
-    if (!hash) {
-      console.error("[tg-auth] No hash in initData")
-      return null
-    }
+    if (!hash) return null
 
     urlParams.delete("hash")
 
@@ -38,10 +30,6 @@ function verifyTelegramWebAppData(telegramInitData: string) {
       .update(dataToCheck)
       .digest("hex")
 
-    console.log("[tg-auth] calculatedHash:", calculatedHash)
-    console.log("[tg-auth] expectedHash:", hash)
-    console.log("[tg-auth] match:", calculatedHash === hash)
-
     if (calculatedHash === hash) {
       const userParam = urlParams.get("user")
       return userParam ? JSON.parse(userParam) : null
@@ -49,7 +37,7 @@ function verifyTelegramWebAppData(telegramInitData: string) {
 
     return null
   } catch (e) {
-    console.error("[tg-auth] Exception:", e)
+    console.error("Telegram validation error:", e)
     return null
   }
 }
@@ -87,22 +75,28 @@ export const authOptions: NextAuthOptions = {
         const tgUser = verifyTelegramWebAppData(credentials.initData)
         if (!tgUser) throw new Error("Недійсний підпис Telegram")
 
-        // Шукаємо або створюємо користувача в базі
-        const user = await prisma.user.upsert({
-          where: { telegramId: tgUser.id.toString() },
-          update: {
-            username: tgUser.username,
-            firstName: tgUser.first_name,
-            lastName: tgUser.last_name,
-            avatarUrl: tgUser.photo_url,
-          },
-          create: {
-            telegramId: tgUser.id.toString(),
-            username: tgUser.username,
-            firstName: tgUser.first_name,
-            lastName: tgUser.last_name,
-            avatarUrl: tgUser.photo_url,
-          },
+        try {
+          const user = await prisma.user.upsert({
+            where: { telegramId: tgUser.id.toString() },
+            update: {
+              username: tgUser.username,
+              lastName: tgUser.last_name,
+              avatarUrl: tgUser.photo_url,
+            },
+            create: {
+              telegramId: tgUser.id.toString(),
+              username: tgUser.username,
+              lastName: tgUser.last_name,
+              avatarUrl: tgUser.photo_url,
+            },
+    })
+
+    return user
+  } catch (e) {
+    console.error("[tg-auth] Prisma upsert failed:", e)
+    throw new Error("Не вдалося створити або оновити користувача")
+  }
+},
         })
 
         return user
