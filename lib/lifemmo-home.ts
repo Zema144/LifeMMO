@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { getAcceptedQuestsForUser, getSkillTreesForUser } from "@/lib/lifemmo-repository"
 import { computeNodeStatuses } from "@/lib/skill-tree-progress"
-import type { ClassColor, Player, Quest, SkillNode, SkillTree } from "@/lib/game-data"
+import type { ClassColor, Player, Quest, SkillNode, SkillTree, NodeStatus } from "@/lib/game-data"
 
 const classColorMap = {
   INT: "int",
