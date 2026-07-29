@@ -20,45 +20,47 @@ export default function LoginPage() {
   const [isTgLoading, setIsTgLoading] = useState(true)
 
   useEffect(() => {
+    let isCancelled = false
+
     const checkTelegramAuth = async () => {
-      // Пряма перевірка об'єкта
+      let attempts = 0
+      while (!window.Telegram?.WebApp?.initData && attempts < 20 && !isCancelled) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        attempts++
+      }
+
+      if (isCancelled) return
+
       const webApp = window.Telegram?.WebApp
       const initData = webApp?.initData
-
-      console.log("WebApp object:", webApp)
-      console.log("Raw initData string:", initData)
 
       if (initData && initData.length > 0) {
         webApp?.ready()
 
         try {
-          // Явно передаємо initData всередині credentials
           const res = await signIn("telegram-login", {
             initData: initData,
             redirect: false,
           })
 
-          console.log("SignIn response:", res)
-
           if (res?.ok) {
             window.location.href = "/"
           } else {
-            console.error("Telegram login failed with error:", res?.error)
             setIsTgLoading(false)
           }
         } catch (error) {
-          console.error("Error during Telegram login catch:", error)
           setIsTgLoading(false)
         }
       } else {
-        console.warn("initData is missing or empty, showing fallback buttons")
         setIsTgLoading(false)
       }
     }
 
-    // Дамо трохи більше часу на повну ініціалізацію скрипта Telegram
-    const timer = setTimeout(checkTelegramAuth, 800)
-    return () => clearTimeout(timer)
+    checkTelegramAuth()
+
+    return () => {
+      isCancelled = true
+    }
   }, [])
 
   return (
