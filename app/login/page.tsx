@@ -24,17 +24,15 @@ export default function LoginPage() {
       const initData = window.Telegram?.WebApp?.initData
 
       if (initData) {
-        // Ми в Телеграмі! Робимо магічний логін
-        window.Telegram?.WebApp?.ready() 
-        
+        window.Telegram?.WebApp?.ready()
+
         try {
           const res = await signIn("telegram-login", {
             initData,
-            redirect: false, // ВИМИКАЄМО автоматичний редирект NextAuth
+            redirect: false,
           })
 
           if (res?.ok) {
-            // ЖОРСТКИЙ РЕДИРЕКТ: змушує Telegram Webview оновити сторінку і підхопити cookies
             window.location.href = "/"
           } else {
             console.error("Telegram login failed:", res?.error)
@@ -45,7 +43,6 @@ export default function LoginPage() {
           setIsTgLoading(false)
         }
       } else {
-        // Ми у звичайному браузері — показуємо звичайні кнопки
         setIsTgLoading(false)
       }
     }
