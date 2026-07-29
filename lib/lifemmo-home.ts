@@ -36,7 +36,6 @@ function toPlayer(
     gender?: string | null
     avatarSkin?: string | null
     avatarHair?: string | null
-    hasDebuff: activeDebuffs.length > 0,
     avatarArmor?: string | null
   },
   activeDebuffs: { stat: string; value: number }[]
@@ -57,8 +56,8 @@ function toPlayer(
     avatarSkin: user.avatarSkin || "light",
     avatarHair: user.avatarHair || "short",
     avatarArmor: user.avatarArmor || "cloth",
+    hasDebuff: activeDebuffs.length > 0, // <--- ОСЬ ТУТ МАЄ БУТИ ЦЕЙ РЯДОК
     stats: [
-      // Віднімаємо дебафи (але не даємо характеристиці впасти нижче 1)
       { key: "INT", label: "Intelligence", value: Math.max(1, user.intStat - getDebuff("INT")), color: "int" },
       { key: "STR", label: "Strength", value: Math.max(1, user.strStat - getDebuff("STR")), color: "str" },
       { key: "DEX", label: "Dexterity", value: Math.max(1, user.dexStat - getDebuff("DEX")), color: "craft" },
