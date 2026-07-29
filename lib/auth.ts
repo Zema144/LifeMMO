@@ -15,6 +15,7 @@ function verifyTelegramWebAppData(telegramInitData: string) {
 
     urlParams.delete("hash")
 
+
     const dataToCheck = Array.from(urlParams.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}=${value}`)
@@ -70,25 +71,27 @@ export const authOptions: NextAuthOptions = {
         initData: { label: "Init Data", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.initData) throw new Error("Не передано дані Telegram")
+  if (!credentials?.initData) throw new Error("Не передано дані Telegram")
 
-        const tgUser = verifyTelegramWebAppData(credentials.initData)
-        if (!tgUser) throw new Error("Недійсний підпис Telegram")
+  const tgUser = verifyTelegramWebAppData(credentials.initData)
+  if (!tgUser) throw new Error("Недійсний підпис Telegram")
 
-        try {
-          const user = await prisma.user.upsert({
-            where: { telegramId: tgUser.id.toString() },
-            update: {
-              username: tgUser.username,
-              lastName: tgUser.last_name,
-              avatarUrl: tgUser.photo_url,
-            },
-            create: {
-              telegramId: tgUser.id.toString(),
-              username: tgUser.username,
-              lastName: tgUser.last_name,
-              avatarUrl: tgUser.photo_url,
-            },
+  try {
+    const user = await prisma.user.upsert({
+      where: { telegramId: tgUser.id.toString() },
+      update: {
+        username: tgUser.username,
+        lastName: tgUser.last_name,
+        avatarUrl: tgUser.photo_url,
+
+      },
+      create: {
+        telegramId: tgUser.id.toString(),
+        username: tgUser.username,
+        lastName: tgUser.last_name,
+        avatarUrl: tgUser.photo_url,
+
+      },
     })
 
     return user
@@ -97,10 +100,6 @@ export const authOptions: NextAuthOptions = {
     throw new Error("Не вдалося створити або оновити користувача")
   }
 },
-        })
-
-        return user
-      },
     }),
   ],
   callbacks: {
