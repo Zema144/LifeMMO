@@ -9,5 +9,5 @@ export default withAuth({
 // Вказуємо, які саме шляхи треба захищати. 
 // Захищаємо все, ОКРІМ сторінки логіну, API-роутів та статики (картинок/шрифтів).
 export const config = {
-matcher: ["/((?!api|_next/static|_next/image|favicon.ico|login|ingest|avatar-wizard.png).*)"],
+matcher: ["/((?!api/auth|api|_next/static|_next/image|favicon.ico|login|ingest|avatar-wizard.png).*)"],
 }

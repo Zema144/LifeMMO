@@ -79,12 +79,8 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.initData) throw new Error("Не передано дані Telegram")
 
-        // ТИМЧАСОВО ПРОПУСКАЄМО ПЕРЕВІРКУ ХЕШУ ДЛЯ ДЕБАГУ
-        const urlParams = new URLSearchParams(credentials.initData)
-        const userParam = urlParams.get("user")
-        
-        if (!userParam) throw new Error("Немає даних користувача в Telegram")
-        const tgUser = JSON.parse(decodeURIComponent(userParam))
+        const tgUser = verifyTelegramWebAppData(credentials.initData)
+        if (!tgUser) throw new Error("Недійсний підпис Telegram")
 
         // Шукаємо або створюємо користувача в базі
         const user = await prisma.user.upsert({
