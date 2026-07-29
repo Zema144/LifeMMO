@@ -13,11 +13,7 @@ const classColorMap = {
   CRAFT: "craft",
 } as const satisfies Record<string, ClassColor>
 
-const nodeStatusMap = {
-  MASTERED: "mastered",
-  ACTIVE: "active",
-  LOCKED: "locked",
-} as const satisfies Record<string, NodeStatus>
+
 
 // Додаємо activeDebuffs як другий аргумент
 function toPlayer(
