@@ -1,9 +1,3 @@
-// Mentor persona resolved automatically from a quest's category/stat.
-// Mirrors the persona logic in app/api/chat/route.ts exactly, so the
-// portrait shown here always matches which system prompt actually answers.
-//
-// ⚠️ ADJUST ME: drop the 3 real PNGs into /public/mentors/ with these names
-// (or change the avatar paths below to match your files).
 
 export type MentorId = "gromgar" | "eldor" | "lirana"
 
@@ -16,9 +10,9 @@ export type Mentor = {
 }
 
 const MENTORS: Record<MentorId, Mentor> = {
-  gromgar: { id: "gromgar", name: "Громгар", title: "Огр-Воїн", avatar: "/mentors/gromgar.png", accent: "streak" },
-  eldor: { id: "eldor", name: "Елдор", title: "Мудрий Маг", avatar: "/mentors/eldor.png", accent: "primary" },
-  lirana: { id: "lirana", name: "Лірана", title: "Ельфійка", avatar: "/mentors/lirana.png", accent: "chart-5" },
+  gromgar: { id: "gromgar", name: "Gromgar", title: "Warrior Ogr", avatar: "/mentors/gromgar.png", accent: "streak" },
+  eldor: { id: "eldor", name: "Eldor", title: "Mystery Wizard", avatar: "/mentors/eldor.png", accent: "primary" },
+  lirana: { id: "lirana", name: "Lirana", title: "Elf Princess", avatar: "/mentors/lirana.png", accent: "chart-5" },
 }
 
 // Same category strings the route checks against — keep these two files in sync.
@@ -33,9 +27,7 @@ const CATEGORY_TO_MENTOR: Record<string, MentorId> = {
   CRAFT: "eldor",
 }
 
-// route.ts falls back to a generic, un-costumed "Ігровий Майстер" voice for any
-// unrecognized category string, but with only STR/DEX/INT/CHA in play, every
-// real quest should already resolve to one of the 3 mentors above.
+
 const DEFAULT_MENTOR = MENTORS.eldor
 
 export function getMentor(category?: string): Mentor {
