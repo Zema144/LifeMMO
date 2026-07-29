@@ -3,7 +3,8 @@ import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { getAcceptedQuestsForUser, getSkillTreesForUser } from "@/lib/lifemmo-repository"
-import type { ClassColor, NodeStatus, Player, Quest, SkillNode, SkillTree } from "@/lib/game-data"
+import { computeNodeStatuses } from "@/lib/skill-tree-progress"
+import type { ClassColor, Player, Quest, SkillNode, SkillTree } from "@/lib/game-data"
 
 const classColorMap = {
   INT: "int",
@@ -201,27 +202,19 @@ export async function getHomeData() {
   )
 
   const skillTrees: SkillTree[] = trees.map((tree) => {
-    const questByNode = new Map<string, Quest[]>()
-    const treeQuests = tree.quests.map((quest) => {
-      
-      const userQuest = acceptedQuestMap.get(quest.slug)
-      const mapped = toQuest(quest, userQuest?.expiresAt)
-      
-      if (completedQuestIds.has(quest.slug)) {
-        mapped.status = "completed"
-      }
-      
-      if (quest.nodeId) {
-        questByNode.set(quest.nodeId, [...(questByNode.get(quest.nodeId) ?? []), mapped])
-      }
-      
-      return mapped
-    })
+    const statusByNodeId = computeNodeStatuses(
+      tree.nodes.map((node) => ({
+        id: node.id,
+        prereqIds: node.prerequisites.map((entry) => entry.prerequisiteId),
+        questSlugs: (questByNode.get(node.id) ?? []).map((quest) => quest.id),
+      })),
+      completedQuestIds,
+    )
 
     const nodes: SkillNode[] = tree.nodes.map((node) => ({
       id: node.slug,
       label: node.label,
-      status: nodeStatusMap[node.statusDefault],
+      status: statusByNodeId.get(node.id) ?? "locked",
       x: node.x,
       y: node.y,
       prereqs: node.prerequisites.map((entry) => entry.prerequisite.slug),

@@ -82,57 +82,159 @@ const skillTrees = [
     slug: "fitness",
     label: "Fitness & Gym",
     className: "Iron Warrior",
-    blurb: "Forge raw Strength through daily training.",
+    blurb: "Forge raw Strength through real training, tracked honestly.",
     icon: "dumbbell",
     classColor: "STR",
-    displayLevel: 3,
+    displayLevel: 1,
     primaryStat: "STR",
     npcRole: "WARRIOR",
     sortOrder: 20,
     isStarter: true,
     quests: [
       {
-        slug: "fit-1",
-        title: "Push Day Session",
-        description: "Complete 4 sets of bench press and shoulder work.",
-        xpReward: 120,
-        goldReward: 15,
+        slug: "fit-assessment-1",
+        title: "Baseline Self-Assessment",
+        description:
+          "Record your current numbers: max push-ups in one set, max bodyweight squats in one set, and your time for 1 mile (walk, jog, or run). This is your starting line, not a test to pass or fail.",
+        xpReward: 60,
+        goldReward: 10,
         hasAiHelper: true,
-        nodeSlug: "fit-n3",
+        nodeSlug: "fit-assessment",
       },
       {
-        slug: "fit-2",
-        title: "10k Steps",
-        description: "Walk at least 10,000 steps before sunset.",
-        xpReward: 40,
-        nodeSlug: "fit-n3",
+        slug: "fit-str-1",
+        title: "Bodyweight Squat Volume",
+        description: "Complete 3 sets of 8 bodyweight squats with full depth, resting 60–90 seconds between sets.",
+        xpReward: 70,
+        goldReward: 10,
+        nodeSlug: "fit-strength-foundations",
+      },
+      {
+        slug: "fit-str-2",
+        title: "Push-Up Progression",
+        description:
+          "Complete 3 sets of 8 push-ups — knee, incline, or full, whichever is the hardest version you can do with good form.",
+        xpReward: 70,
+        goldReward: 10,
+        hasAiHelper: true,
+        nodeSlug: "fit-strength-foundations",
+      },
+      {
+        slug: "fit-str-3",
+        title: "Core Stability: Plank Hold",
+        description: "Hold a front plank for 3 sets of 30–60 seconds, keeping a straight line from shoulders to heels.",
+        xpReward: 50,
+        nodeSlug: "fit-strength-foundations",
+      },
+      {
+        slug: "fit-cardio-1",
+        title: "5K Walk or Jog",
+        description: "Cover 5 kilometers at a steady pace, walking or jogging, without stopping.",
+        xpReward: 90,
+        goldReward: 15,
+        nodeSlug: "fit-cardio-base",
+      },
+      {
+        slug: "fit-cardio-2",
+        title: "Zone 2 Endurance Session",
+        description:
+          "Do 20 continuous minutes of cardio at a conversational pace — a pace where you could still talk in full sentences.",
+        xpReward: 60,
+        nodeSlug: "fit-cardio-base",
+      },
+      {
+        slug: "fit-pp-1",
+        title: "Push Day Session",
+        description: "Complete a push-focused session — chest, shoulders, and triceps — 4 working sets per exercise.",
+        xpReward: 120,
+        goldReward: 20,
+        hasAiHelper: true,
+        nodeSlug: "fit-push-pull-split",
+      },
+      {
+        slug: "fit-pp-2",
+        title: "Pull Day Session",
+        description:
+          "Complete a pull-focused session — back and biceps — rows plus pull-ups or lat pulldowns, 4 working sets per exercise.",
+        xpReward: 120,
+        goldReward: 20,
+        hasAiHelper: true,
+        nodeSlug: "fit-push-pull-split",
+      },
+      {
+        slug: "fit-int-1",
+        title: "400m Repeats",
+        description: "Run 6 repeats of 400 meters at a hard pace, with 90 seconds of walking rest between each.",
+        xpReward: 100,
+        goldReward: 15,
+        nodeSlug: "fit-interval-training",
+      },
+      {
+        slug: "fit-int-2",
+        title: "20-Minute HIIT Circuit",
+        description:
+          "Complete a 20-minute high-intensity interval circuit: 30 seconds of work, 30 seconds of rest, rotating through 4 exercises.",
+        xpReward: 90,
+        nodeSlug: "fit-interval-training",
+      },
+      {
+        slug: "fit-hyp-1",
+        title: "Full Training Week",
+        description: "Complete four structured sessions this week — 2 strength, 2 cardio/interval — logging weight, reps, or pace for each.",
+        xpReward: 200,
+        goldReward: 40,
+        hasAiHelper: true,
+        nodeSlug: "fit-hypertrophy-block",
+      },
+      {
+        slug: "fit-hyp-2",
+        title: "Progressive Overload Check",
+        description: "Increase the weight, reps, or pace on two exercises compared to your last session, and note the improvement.",
+        xpReward: 90,
+        nodeSlug: "fit-hypertrophy-block",
       },
     ],
     nodes: [
-      { slug: "fit-n1", label: "Cardio Base", statusDefault: "MASTERED", x: 8, y: 8, prereqs: [] },
+      { slug: "fit-assessment", label: "Fitness Assessment", statusDefault: "ACTIVE", x: 8, y: 8, prereqs: [] },
       {
-        slug: "fit-n2",
+        slug: "fit-strength-foundations",
         label: "Strength Foundations",
-        statusDefault: "MASTERED",
-        x: 200,
-        y: 8,
-        prereqs: [],
-      },
-      {
-        slug: "fit-n3",
-        label: "Push / Pull Split",
-        statusDefault: "ACTIVE",
-        x: 104,
+        statusDefault: "LOCKED",
+        x: 8,
         y: 140,
-        prereqs: ["fit-n1", "fit-n2"],
+        prereqs: ["fit-assessment"],
       },
       {
-        slug: "fit-n4",
+        slug: "fit-cardio-base",
+        label: "Cardio Base",
+        statusDefault: "LOCKED",
+        x: 200,
+        y: 140,
+        prereqs: ["fit-assessment"],
+      },
+      {
+        slug: "fit-push-pull-split",
+        label: "Push / Pull Split",
+        statusDefault: "LOCKED",
+        x: 8,
+        y: 272,
+        prereqs: ["fit-strength-foundations"],
+      },
+      {
+        slug: "fit-interval-training",
+        label: "Interval Training",
+        statusDefault: "LOCKED",
+        x: 200,
+        y: 272,
+        prereqs: ["fit-cardio-base"],
+      },
+      {
+        slug: "fit-hypertrophy-block",
         label: "Hypertrophy Block",
         statusDefault: "LOCKED",
         x: 104,
-        y: 272,
-        prereqs: ["fit-n3"],
+        y: 404,
+        prereqs: ["fit-push-pull-split", "fit-interval-training"],
       },
     ],
   },
@@ -348,6 +450,7 @@ const skillTrees = [
 
 async function main() {
   for (const treeData of skillTrees) {
+
     const tree = await prisma.skillTree.upsert({
       where: { slug: treeData.slug },
       update: {
@@ -448,6 +551,26 @@ async function main() {
         },
       })
     }
+const definedNodeSlugs = treeData.nodes.map((n) => n.slug)
+    const definedQuestSlugs = treeData.quests.map((q) => q.slug)
+
+    const staleNodes = await prisma.skillNode.findMany({
+      where: { treeId: tree.id, slug: { notIn: definedNodeSlugs } },
+      select: { id: true },
+    })
+    const staleNodeIds = staleNodes.map((n) => n.id)
+
+    if (staleNodeIds.length > 0) {
+      await prisma.skillNodePrerequisite.deleteMany({
+        where: { OR: [{ nodeId: { in: staleNodeIds } }, { prerequisiteId: { in: staleNodeIds } }] },
+      })
+      await prisma.quest.deleteMany({ where: { nodeId: { in: staleNodeIds } } })
+      await prisma.skillNode.deleteMany({ where: { id: { in: staleNodeIds } } })
+    }
+
+    await prisma.quest.deleteMany({
+      where: { treeId: tree.id, slug: { notIn: definedQuestSlugs } },
+    })
   }
 }
 
