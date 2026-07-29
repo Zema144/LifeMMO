@@ -240,16 +240,27 @@ export function SkillTreeCanvas({
     if (pointers.current.size < 2) pinchStart.current = null
   }
 
-  useEffect(() => {
+useEffect(() => {
     const el = viewportRef.current
     if (!el) return
+
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
       const delta = e.deltaY > 0 ? -0.08 : 0.08
       setScale((s) => clamp(s + delta, MIN_SCALE, MAX_SCALE))
     }
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+    }
+
     el.addEventListener("wheel", onWheel, { passive: false })
-    return () => el.removeEventListener("wheel", onWheel)
+    el.addEventListener("touchmove", onTouchMove, { passive: false })
+
+    return () => {
+      el.removeEventListener("wheel", onWheel)
+      el.removeEventListener("touchmove", onTouchMove)
+    }
   }, [])
 
   useEffect(() => {
