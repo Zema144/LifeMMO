@@ -31,6 +31,10 @@ function toPlayer(user: {
   strStat: number
   dexStat: number
   chaStat: number
+  gender?: string | null
+  avatarSkin?: string | null
+  avatarHair?: string | null
+  avatarArmor?: string | null
 }): Player {
   return {
     name: user.firstName ?? user.username ?? "Georgiy",
@@ -40,6 +44,10 @@ function toPlayer(user: {
     xp: user.xp,
     xpToNext: user.xpToNext,
     gold: user.gold,
+    gender: user.gender?.toLowerCase() || "male", // toLowerCase бо Prisma може повертати MALE
+    avatarSkin: user.avatarSkin || "light",
+    avatarHair: user.avatarHair || "short",
+    avatarArmor: user.avatarArmor || "cloth",
     stats: [
       { key: "INT", label: "Intelligence", value: user.intStat, color: "int" },
       { key: "STR", label: "Strength", value: user.strStat, color: "str" },

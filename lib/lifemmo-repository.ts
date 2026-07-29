@@ -112,7 +112,7 @@ export async function getAcceptedQuestsForUser(userId: string) {
   return prisma.userQuest.findMany({
     where: {
       userId,
-      status: { in: ["ACCEPTED", "FAILED"] },
+      status: { in: ["ACCEPTED", "FAILED", "COMPLETED"] }, 
     },
     orderBy: { acceptedAt: "asc" },
     include: {

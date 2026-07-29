@@ -193,6 +193,13 @@ const handleComplete = (id: string) => {
     setActiveTrees((prev) => (prev.includes(id) ? prev : [...prev, id]))
     handleSelect(id)
     setBrowseOpen(false)
+    
+    fetch("/api/trees/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ treeId: id }),
+    }).catch(console.error)
+
     posthog.capture(analyticsEvents.treeJoined, {
       tree_slug: id,
     })
