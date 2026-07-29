@@ -11,7 +11,15 @@ function verifyTelegramWebAppData(telegramInitData: string) {
   try {
     const urlParams = new URLSearchParams(telegramInitData)
     const hash = urlParams.get("hash")
-    if (!hash) return null
+
+    console.log("[tg-auth] initData length:", telegramInitData.length)
+    console.log("[tg-auth] hash present:", !!hash)
+    console.log("[tg-auth] TELEGRAM_BOT_TOKEN present:", !!process.env.TELEGRAM_BOT_TOKEN, "length:", process.env.TELEGRAM_BOT_TOKEN?.length)
+
+    if (!hash) {
+      console.error("[tg-auth] No hash in initData")
+      return null
+    }
 
     urlParams.delete("hash")
 
@@ -30,6 +38,10 @@ function verifyTelegramWebAppData(telegramInitData: string) {
       .update(dataToCheck)
       .digest("hex")
 
+    console.log("[tg-auth] calculatedHash:", calculatedHash)
+    console.log("[tg-auth] expectedHash:", hash)
+    console.log("[tg-auth] match:", calculatedHash === hash)
+
     if (calculatedHash === hash) {
       const userParam = urlParams.get("user")
       return userParam ? JSON.parse(userParam) : null
@@ -37,7 +49,7 @@ function verifyTelegramWebAppData(telegramInitData: string) {
 
     return null
   } catch (e) {
-    console.error("Telegram validation error:", e)
+    console.error("[tg-auth] Exception:", e)
     return null
   }
 }
