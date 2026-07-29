@@ -8,37 +8,45 @@ import crypto from "crypto"
 
 // Валідатор даних від Telegram Mini App
 function verifyTelegramWebAppData(telegramInitData: string) {
-  const initData = new URLSearchParams(telegramInitData)
-  const hash = initData.get("hash")
-  
-  if (!hash) return null
+  try {
+    const urlParams = new URLSearchParams(telegramInitData)
+    const hash = urlParams.get("hash")
 
-  initData.delete("hash")
-  
-  // Сортуємо параметри за алфавітом
-  const dataToCheck = Array.from(initData.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n")
+    if (!hash) return null
 
-  // Створюємо секретний ключ на основі токена твого бота
-  const secretKey = crypto
-    .createHmac("sha256", "WebAppData")
-    .update(process.env.TELEGRAM_BOT_TOKEN || "")
-    .digest()
-    
-  // Хешуємо дані і порівнюємо з отриманим хешем
-  const calculatedHash = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataToCheck)
-    .digest("hex")
+    const pairs: string[] = []
+    telegramInitData.split("&").forEach((pair) => {
+      const [key, value] = pair.split("=")
+      if (key !== "hash") {
+        pairs.push(`${key}=${value}`)
+      }
+    })
 
-  if (calculatedHash === hash) {
-    const userString = initData.get("user")
-    return userString ? JSON.parse(userString) : null
+    // Сортуємо параметри за алфавітом
+    const dataToCheck = pairs.sort().join("\n")
+
+    // Створюємо секретний ключ на основі токена бота
+    const secretKey = crypto
+      .createHmac("sha256", "WebAppData")
+      .update(process.env.TELEGRAM_BOT_TOKEN || "")
+      .digest()
+
+    // Хешуємо дані і порівнюємо з отриманим хешем
+    const calculatedHash = crypto
+      .createHmac("sha256", secretKey)
+      .update(dataToCheck)
+      .digest("hex")
+
+    if (calculatedHash === hash) {
+      const userParam = urlParams.get("user")
+      return userParam ? JSON.parse(decodeURIComponent(userParam)) : null
+    }
+
+    return null
+  } catch (e) {
+    console.error("Telegram validation error:", e)
+    return null
   }
-  
-  return null
 }
 
 export const authOptions: NextAuthOptions = {

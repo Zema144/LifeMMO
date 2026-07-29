@@ -1,8 +1,8 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { Sparkles, Gamepad2 } from "lucide-react"
-import { useEffect } from "react"
+import { Sparkles, Gamepad2, Loader2 } from "lucide-react"
+import { useEffect, useState } from "react"
 import Script from "next/script"
 
 declare global {
@@ -17,11 +17,49 @@ declare global {
 }
 
 export default function LoginPage() {
+  const [isTgLoading, setIsTgLoading] = useState(true)
+
   useEffect(() => {
-    const initData = window.Telegram?.WebApp?.initData
-    if (initData) {
-      window.Telegram?.WebApp?.ready()
-      signIn("telegram-login", { initData, callbackUrl: "/" })
+    let isCancelled = false
+
+    const checkTelegramAuth = async () => {
+      let attempts = 0
+      while (!window.Telegram?.WebApp?.initData && attempts < 20 && !isCancelled) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        attempts++
+      }
+
+      if (isCancelled) return
+
+      const webApp = window.Telegram?.WebApp
+      const initData = webApp?.initData
+
+      if (initData && initData.length > 0) {
+        webApp?.ready()
+
+        try {
+          const res = await signIn("telegram-login", {
+            initData: initData,
+            redirect: false,
+          })
+
+          if (res?.ok) {
+            window.location.href = "/"
+          } else {
+            setIsTgLoading(false)
+          }
+        } catch (error) {
+          setIsTgLoading(false)
+        }
+      } else {
+        setIsTgLoading(false)
+      }
+    }
+
+    checkTelegramAuth()
+
+    return () => {
+      isCancelled = true
     }
   }, [])
 
@@ -38,22 +76,31 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="space-y-3 pt-4">
-          <button
-            onClick={() => signIn("google", { callbackUrl: "/" })}
-            className="w-full flex items-center justify-center gap-2 border-2 border-border bg-secondary hover:bg-secondary/80 p-3 transition-colors"
-          >
-            <span className="font-pixel text-xs text-foreground">Continue with Google</span>
-          </button>
+        {isTgLoading ? (
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="font-pixel text-[10px] text-muted-foreground animate-pulse">
+              Connecting to Telegram Network...
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 pt-4">
+            <button
+              onClick={() => signIn("google", { callbackUrl: "/" })}
+              className="w-full flex items-center justify-center gap-2 border-2 border-border bg-secondary hover:bg-secondary/80 p-3 transition-colors"
+            >
+              <span className="font-pixel text-xs text-foreground">Continue with Google</span>
+            </button>
 
-          <button
-            onClick={() => signIn("discord", { callbackUrl: "/" })}
-            className="w-full flex items-center justify-center gap-2 border-2 border-[#5865F2] bg-[#5865F2]/10 hover:bg-[#5865F2]/20 p-3 transition-colors"
-          >
-            <Gamepad2 className="size-4 text-[#5865F2]" />
-            <span className="font-pixel text-xs text-[#5865F2]">Continue with Discord</span>
-          </button>
-        </div>
+            <button
+              onClick={() => signIn("discord", { callbackUrl: "/" })}
+              className="w-full flex items-center justify-center gap-2 border-2 border-[#5865F2] bg-[#5865F2]/10 hover:bg-[#5865F2]/20 p-3 transition-colors"
+            >
+              <Gamepad2 className="size-4 text-[#5865F2]" />
+              <span className="font-pixel text-xs text-[#5865F2]">Continue with Discord</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
