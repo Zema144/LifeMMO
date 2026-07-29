@@ -5,7 +5,6 @@ import { Sparkles, Gamepad2, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import Script from "next/script"
 
-// Підказуємо TypeScript, що в об'єкті window з'явиться Telegram
 declare global {
   interface Window {
     Telegram?: {
@@ -21,17 +20,30 @@ export default function LoginPage() {
   const [isTgLoading, setIsTgLoading] = useState(true)
 
   useEffect(() => {
-    // Функція, яка перевіряє, чи ми всередині Телеграму
-    const checkTelegramAuth = () => {
+    const checkTelegramAuth = async () => {
       const initData = window.Telegram?.WebApp?.initData
 
       if (initData) {
         // Ми в Телеграмі! Робимо магічний логін
-        window.Telegram?.WebApp?.ready() // Кажемо ТГ, що додаток завантажився
-        signIn("telegram-login", {
-          initData,
-          callbackUrl: "/",
-        })
+        window.Telegram?.WebApp?.ready() 
+        
+        try {
+          const res = await signIn("telegram-login", {
+            initData,
+            redirect: false, // ВИМИКАЄМО автоматичний редирект NextAuth
+          })
+
+          if (res?.ok) {
+            // ЖОРСТКИЙ РЕДИРЕКТ: змушує Telegram Webview оновити сторінку і підхопити cookies
+            window.location.href = "/"
+          } else {
+            console.error("Telegram login failed:", res?.error)
+            setIsTgLoading(false)
+          }
+        } catch (error) {
+          console.error("Error during Telegram login:", error)
+          setIsTgLoading(false)
+        }
       } else {
         // Ми у звичайному браузері — показуємо звичайні кнопки
         setIsTgLoading(false)
@@ -44,7 +56,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      {/* Підключаємо офіційний скрипт Telegram Mini Apps */}
       <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
 
       <div className="hud-panel max-w-sm w-full bg-card p-6 text-center space-y-6">
@@ -56,7 +67,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Якщо ми перевіряємо Телеграм або входимо — показуємо гарний лоадер */}
         {isTgLoading ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-4">
             <Loader2 className="size-8 animate-spin text-primary" />
