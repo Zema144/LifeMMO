@@ -13,7 +13,11 @@ const classColorMap = {
   CRAFT: "craft",
 } as const satisfies Record<string, ClassColor>
 
-
+const nodeStatusMap = {
+  MASTERED: "mastered",
+  ACTIVE: "active",
+  LOCKED: "locked",
+} as const satisfies Record<string, NodeStatus>
 
 // Додаємо activeDebuffs як другий аргумент
 function toPlayer(
@@ -198,11 +202,26 @@ export async function getHomeData() {
   )
 
   const skillTrees: SkillTree[] = trees.map((tree) => {
+    // 1. Створюємо мапу квестів за нодами для цього дерева
+    const questByNode = new Map<string, any[]>()
+    for (const quest of tree.quests) {
+      if (quest.nodeId) {
+        const list = questByNode.get(quest.nodeId) || []
+        list.push(quest)
+        questByNode.set(quest.nodeId, list)
+      }
+    }
+
+    const treeQuests: Quest[] = tree.quests.map((quest) => {
+      const userQuest = acceptedQuestMap.get(quest.slug)
+      return toQuest(quest, userQuest?.expiresAt)
+    })
+
     const statusByNodeId = computeNodeStatuses(
       tree.nodes.map((node) => ({
         id: node.id,
         prereqIds: node.prerequisites.map((entry) => entry.prerequisiteId),
-        questSlugs: (questByNode.get(node.id) ?? []).map((quest) => quest.id),
+        questSlugs: (questByNode.get(node.id) ?? []).map((quest) => quest.slug),
       })),
       completedQuestIds,
     )
@@ -214,7 +233,7 @@ export async function getHomeData() {
       x: node.x,
       y: node.y,
       prereqs: node.prerequisites.map((entry) => entry.prerequisite.slug),
-      questIds: (questByNode.get(node.id) ?? []).map((quest) => quest.id),
+      questIds: (questByNode.get(node.id) ?? []).map((quest) => quest.slug),
     }))
 
     return {
