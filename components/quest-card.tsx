@@ -3,9 +3,58 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Image from "next/image"
-import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2 } from "lucide-react"
+import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "lucide-react"
 import type { Quest } from "@/lib/game-data"
 import { getMentor } from "@/lib/mentors"
+
+// --- ХАК ДЛЯ ЖИВОГО ТАЙМЕРА ---
+function QuestTimer({ expiresAt }: { expiresAt?: string }) {
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isExpired: boolean } | null>(null)
+
+  useEffect(() => {
+    if (!expiresAt) return
+
+    const calculateTime = () => {
+      const diff = new Date(expiresAt).getTime() - Date.now()
+      if (diff <= 0) {
+        return { hours: 0, minutes: 0, seconds: 0, isExpired: true }
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      return { hours, minutes, seconds, isExpired: false }
+    }
+
+    setTimeLeft(calculateTime())
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTime())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [expiresAt])
+
+  if (!expiresAt || !timeLeft) return null
+
+  if (timeLeft.isExpired) {
+    return (
+      <div className="flex items-center gap-1.5 font-pixel text-[8px] uppercase text-destructive animate-pulse">
+        <Hourglass className="size-3" aria-hidden="true" />
+        <span>Quest Expired (Penalty Pending)</span>
+      </div>
+    )
+  }
+
+  const isUrgent = timeLeft.hours < 3
+
+  return (
+    <div className={`flex items-center gap-1.5 font-pixel text-[8px] uppercase tracking-wider ${isUrgent ? "text-amber-500 animate-pulse" : "text-muted-foreground"}`}>
+      <Hourglass className="size-3" aria-hidden="true" />
+      <span>
+        {timeLeft.hours}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s left
+      </span>
+    </div>
+  )
+}
 
 // --- 1. ОРИГІНАЛЬНИЙ ЧІП (ДЛЯ ГОЛОВНОЇ СТОРІНКИ) ---
 function RewardChip({ label, kind }: { label: string; kind: string }) {
@@ -110,7 +159,10 @@ export function QuestCard({
         <article className="relative overflow-hidden bg-gradient-to-br from-[#1c1622] to-background p-4 sm:p-6 transition-all duration-300">
           <div className="absolute -right-12 -top-12 size-32 rounded-full bg-primary/10 blur-3xl" />
           
-          <h3 className="relative z-10 font-serif text-[15px] sm:text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="relative z-10 font-serif text-[15px] sm:text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
+            {quest.expiresAt && <div className="shrink-0"><QuestTimer expiresAt={quest.expiresAt} /></div>}
+          </div>
           
           <p className="relative z-10 mt-1.5 sm:mt-2 text-[12px] sm:text-[14px] leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
           
@@ -189,7 +241,7 @@ export function QuestCard({
   }
 
   // ======================================================================
-  // ВАРІАНТ 2: ТВІЙ ОРИГІНАЛЬНИЙ КОД (Для головної сторінки - БЕЗ КНОПКИ ACCEPT)
+  // ВАРІАНТ 2: РЕТРО ДИЗАЙН (Для головної сторінки)
   // ======================================================================
 
   if (quest.status === "completed") {
@@ -209,7 +261,11 @@ export function QuestCard({
   return (
     <>
       <article className="hud-panel bg-card p-4 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-        <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
+          {quest.expiresAt && <div className="shrink-0"><QuestTimer expiresAt={quest.expiresAt} /></div>}
+        </div>
+
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -252,7 +308,6 @@ export function QuestCard({
         </div>
       </article>
 
-      {/* ТВІЙ ОРИГІНАЛЬНИЙ ДІАЛОГ (Через createPortal) */}
       {isAiModalOpen && mounted && createPortal(
         <div
           role="dialog"

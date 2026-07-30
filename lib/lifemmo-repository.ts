@@ -132,6 +132,9 @@ export async function acceptQuest(userId: string, questSlug: string) {
     select: { id: true },
   })
 
+  // Встановлюємо дедлайн: наприклад, 24 години на виконання
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
   return prisma.userQuest.upsert({
     where: {
       userId_questId: {
@@ -142,11 +145,13 @@ export async function acceptQuest(userId: string, questSlug: string) {
     update: {
       status: "ACCEPTED",
       failedAt: null,
+      expiresAt: expiresAt,
     },
     create: {
       userId,
       questId: quest.id,
       status: "ACCEPTED",
+      expiresAt: expiresAt,
     },
   })
 }
@@ -160,18 +165,14 @@ export async function completeQuest(userId: string, questSlug: string) {
         xpReward: true,
         goldReward: true,
         nodeId: true,
-        tree: {
-          select: { classColor: true },
-        },
+        tree: { select: { classColor: true } },
       },
     })
 
+    // 1. Оновлюємо статус квесту на COMPLETED
     await tx.userQuest.upsert({
       where: {
-        userId_questId: {
-          userId,
-          questId: quest.id,
-        },
+        userId_questId: { userId, questId: quest.id },
       },
       update: {
         status: "COMPLETED",
@@ -183,6 +184,17 @@ export async function completeQuest(userId: string, questSlug: string) {
         questId: quest.id,
         status: "COMPLETED",
         completedAt: new Date(),
+      },
+    })
+
+    await tx.debuff.updateMany({
+      where: {
+        userId: userId,
+        sourceQuestId: quest.id,
+        resolvedAt: null,
+      },
+      data: {
+        resolvedAt: new Date(),
       },
     })
 
