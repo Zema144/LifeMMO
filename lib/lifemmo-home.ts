@@ -112,12 +112,15 @@ export async function getHomeData() {
   let needsUpdate = false
   let newStreak = user.streak
 
-  // --- 1. ПЕРЕВІРКА ПРОСТРОЧЕНИХ КВЕСТІВ ТА ДЕБАФІВ ---
+
   const expiredQuests = await prisma.userQuest.findMany({
     where: {
       userId: user.id,
       status: "ACCEPTED",
-      expiresAt: { lt: now }, // Час вийшов
+      expiresAt: { lt: now },
+      quest: {
+        kind: "DAILY",
+      },
     },
     include: {
       quest: true,

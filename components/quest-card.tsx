@@ -7,7 +7,7 @@ import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "
 import type { Quest } from "@/lib/game-data"
 import { getMentor } from "@/lib/mentors"
 
-// --- ХАК ДЛЯ ЖИВОГО ТАЙМЕРА ---
+// --- ХАК ДЛЯ ЖИВОГО ТАЙМЕРА З АНІМАЦІЯМИ ТА БЕЙДЖЕМ ---
 function QuestTimer({ expiresAt }: { expiresAt?: string }) {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isExpired: boolean } | null>(null)
 
@@ -37,9 +37,9 @@ function QuestTimer({ expiresAt }: { expiresAt?: string }) {
 
   if (timeLeft.isExpired) {
     return (
-      <div className="flex items-center gap-1.5 font-pixel text-[8px] uppercase text-destructive animate-pulse">
+      <div className="inline-flex items-center gap-1.5 border border-destructive/50 bg-destructive/15 px-2 py-1 font-pixel text-[8px] uppercase text-destructive animate-pulse mt-1">
         <Hourglass className="size-3" aria-hidden="true" />
-        <span>Quest Expired (Penalty Pending)</span>
+        <span>Expired (Penalty Pending)</span>
       </div>
     )
   }
@@ -47,10 +47,17 @@ function QuestTimer({ expiresAt }: { expiresAt?: string }) {
   const isUrgent = timeLeft.hours < 3
 
   return (
-    <div className={`flex items-center gap-1.5 font-pixel text-[8px] uppercase tracking-wider ${isUrgent ? "text-amber-500 animate-pulse" : "text-muted-foreground"}`}>
-      <Hourglass className="size-3" aria-hidden="true" />
+    <div className={`inline-flex items-center gap-1.5 border px-2 py-1 font-pixel text-[8px] uppercase tracking-wider mt-1 ${
+      isUrgent 
+        ? "border-amber-500/60 bg-amber-500/15 text-amber-400 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.2)]" 
+        : "border-primary/40 bg-primary/10 text-primary shadow-[0_0_8px_rgba(201,147,46,0.15)]"
+    }`}>
+      <Hourglass 
+        className={`size-3 ${isUrgent ? 'animate-[spin_1.5s_linear_infinite]' : 'animate-[spin_4s_linear_infinite]'}`} 
+        aria-hidden="true" 
+      />
       <span>
-        {timeLeft.hours}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s left
+        {timeLeft.hours}H {String(timeLeft.minutes).padStart(2, '0')}M {String(timeLeft.seconds).padStart(2, '0')}S LEFT
       </span>
     </div>
   )
@@ -159,10 +166,14 @@ export function QuestCard({
         <article className="relative overflow-hidden bg-gradient-to-br from-[#1c1622] to-background p-4 sm:p-6 transition-all duration-300">
           <div className="absolute -right-12 -top-12 size-32 rounded-full bg-primary/10 blur-3xl" />
           
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="relative z-10 font-serif text-[15px] sm:text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
-            {quest.expiresAt && <div className="shrink-0"><QuestTimer expiresAt={quest.expiresAt} /></div>}
-          </div>
+          <h3 className="relative z-10 font-serif text-[15px] sm:text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
+          
+          {/* ТАЙМЕР ОКРЕМИМ РЯДКОМ ПІД НАЗВОЮ */}
+          {quest.expiresAt && (
+            <div className="relative z-10 mb-2">
+              <QuestTimer expiresAt={quest.expiresAt} />
+            </div>
+          )}
           
           <p className="relative z-10 mt-1.5 sm:mt-2 text-[12px] sm:text-[14px] leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
           
@@ -261,10 +272,14 @@ export function QuestCard({
   return (
     <>
       <article className="hud-panel bg-card p-4 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
-          {quest.expiresAt && <div className="shrink-0"><QuestTimer expiresAt={quest.expiresAt} /></div>}
-        </div>
+        <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
+        
+        {/* ТАЙМЕР ОКРЕМИМ РЯДКОМ ПІД НАЗВОЮ */}
+        {quest.expiresAt && (
+          <div className="mt-1.5 mb-2">
+            <QuestTimer expiresAt={quest.expiresAt} />
+          </div>
+        )}
 
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
 
