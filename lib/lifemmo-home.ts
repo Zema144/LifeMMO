@@ -212,10 +212,12 @@ export async function getHomeData() {
       }
     }
 
-    const treeQuests: Quest[] = tree.quests.map((quest) => {
-      const userQuest = acceptedQuestMap.get(quest.slug)
-      return toQuest(quest, userQuest?.expiresAt)
-    })
+    const treeQuests: Quest[] = tree.quests
+      .filter((quest) => !completedQuestIds.has(quest.slug)) // Прибирає вже пройдені квести зі списку
+      .map((quest) => {
+        const userQuest = acceptedQuestMap.get(quest.slug)
+        return toQuest(quest, userQuest?.expiresAt)
+      })
 
     const statusByNodeId = computeNodeStatuses(
       tree.nodes.map((node) => ({
