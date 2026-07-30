@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import posthog from "posthog-js"
 import { PlayerHeader } from "@/components/player-header"
 import { CharacterStats } from "@/components/character-stats"
@@ -37,6 +38,7 @@ export function PageClient({
   initialActiveTrees: SkillTreeId[]
   initialAcceptedQuestIds: string[]
 }) {
+  const router = useRouter()
   const capturedOpenRef = useRef(false)
   const [activeTab, setActiveTab] = useState<TabId>("quests")
   const [activeTrees, setActiveTrees] = useState<SkillTreeId[]>(initialActiveTrees)
@@ -48,6 +50,22 @@ export function PageClient({
   const [questState, setQuestState] = useState<Record<string, Quest[]>>(() =>
     Object.fromEntries(initialSkillTrees.map((tree) => [tree.id, tree.quests])),
   )
+
+  useEffect(() => {
+    setPlayer(initialPlayer)
+  }, [initialPlayer])
+
+  useEffect(() => {
+    setActiveTrees(initialActiveTrees)
+  }, [initialActiveTrees])
+
+  useEffect(() => {
+    setAcceptedQuestIds(initialAcceptedQuestIds)
+  }, [initialAcceptedQuestIds])
+
+  useEffect(() => {
+    setQuestState(Object.fromEntries(initialSkillTrees.map((tree) => [tree.id, tree.quests])))
+  }, [initialSkillTrees])
 
   const treeIdByQuestId = useMemo(() => questIndex(initialSkillTrees), [initialSkillTrees])
   const tree = useMemo(() => initialSkillTrees.find((item) => item.id === selected)!, [initialSkillTrees, selected])
@@ -64,8 +82,7 @@ export function PageClient({
       .map((id) => {
         const entry = treeIdByQuestId[id]
         if (!entry) return null
-        const live = questState[entry.treeId]?.find((quest) => quest.id === id)
-        return live ?? entry.quest
+        return questState[entry.treeId]?.find((quest) => quest.id === id) ?? null
       })
       .filter((quest): quest is Quest => quest !== null && quest.status !== "completed")
   }, [acceptedQuestIds, questState, treeIdByQuestId])
@@ -89,7 +106,7 @@ const handleComplete = (id: string) => {
     })
       .then(async (res) => {
         const data = await res.json()
-        
+
         if (data.user) {
           setPlayer((prev) => ({
             ...prev,
@@ -112,6 +129,8 @@ const handleComplete = (id: string) => {
           quest_title: quest.title,
           tree_slug: entry.treeId,
         })
+
+        router.refresh()
       })
       .catch(() => {
         setQuestState((prev) => ({
@@ -138,10 +157,11 @@ const handleComplete = (id: string) => {
           quest_title: entry?.quest.title,
           tree_slug: entry?.treeId,
         })
+        router.refresh()
       })
       .catch(() => {
-      setAcceptedQuestIds((prev) => prev.filter((questId) => questId !== id))
-    })
+        setAcceptedQuestIds((prev) => prev.filter((questId) => questId !== id))
+      })
   }
 
   // --- ГЛОБАЛЬНИЙ СКАНЕР ЧЕРГИ КВЕСТІВ ---
@@ -193,12 +213,14 @@ const handleComplete = (id: string) => {
     setActiveTrees((prev) => (prev.includes(id) ? prev : [...prev, id]))
     handleSelect(id)
     setBrowseOpen(false)
-    
+
     fetch("/api/trees/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ treeId: id }),
-    }).catch(console.error)
+    })
+      .then(() => router.refresh())
+      .catch(console.error)
 
     posthog.capture(analyticsEvents.treeJoined, {
       tree_slug: id,
@@ -207,7 +229,7 @@ const handleComplete = (id: string) => {
 
   const handleAbandon = () => {
     const abandoned = selected
-    
+
     const abandonedTree = initialSkillTrees.find((t) => t.id === abandoned)
     const abandonedQuestIds = abandonedTree ? abandonedTree.quests.map((q) => q.id) : []
 
@@ -224,7 +246,9 @@ const handleComplete = (id: string) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: currentUserId, treeId: abandoned }),
-    }).catch((err) => console.error("Failed to abandon tree quests on server:", err))
+    })
+      .then(() => router.refresh())
+      .catch((err) => console.error("Failed to abandon tree quests on server:", err))
 
     posthog.capture(analyticsEvents.treeAbandoned, {
       tree_slug: abandoned,
