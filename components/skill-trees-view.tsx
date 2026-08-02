@@ -54,7 +54,7 @@ export function SkillTreesView({
               <h2 className="font-pixel text-[10px] leading-relaxed text-foreground">{tree.label}</h2>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground text-pretty">{tree.blurb}</p>
             </div>
-            {activeTrees.length > 1 && (
+            
               <button
                 type="button"
                 onClick={onAbandon}
@@ -63,7 +63,7 @@ export function SkillTreesView({
                 <LogOut className="size-3" aria-hidden="true" />
                 Abandon
               </button>
-            )}
+            
           </div>
 
           <SkillTreeCanvas tree={tree} onOpenNode={onOpenNode} />
