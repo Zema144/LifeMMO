@@ -4,8 +4,51 @@ import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Image from "next/image"
 import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "lucide-react"
-import type { Quest } from "@/lib/game-data" // Переконайся, що тип Quest тепер містить поле tree?: any
 import { getMentor } from "@/lib/mentors"
+import { useEnergy } from "@/hooks/use-energy" // <--- Твій винесений хук
+
+const MAX_ENERGY = 3
+
+// ======================================================================
+// ПРЕМІУМ ВІДЖЕТ ЕНЕРГІЇ
+// ======================================================================
+function MentorEnergyDisplay({ energy, formattedTime }: { energy: number, formattedTime: string | null }) {
+  return (
+    <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full shadow-lg">
+      <div className="flex items-center gap-1.5">
+        <Zap className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+        
+        <div className="flex gap-1.5 ml-1">
+          {Array.from({ length: MAX_ENERGY }).map((_, i) => {
+            const isActive = i < energy
+            const isCharging = i === energy
+            
+            return (
+              <div 
+                key={i} 
+                className={`w-2.5 h-2.5 rounded-sm rotate-45 transition-all duration-500 ${
+                  isActive 
+                    ? "bg-cyan-400 shadow-[0_0_8px_theme(colors.cyan.400)]" 
+                    : isCharging
+                      ? "bg-cyan-900/50 border border-cyan-400/30 animate-pulse"
+                      : "bg-white/5 border border-white/10"
+                }`}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      {formattedTime && (
+        <div className="flex items-center gap-2 pl-2 border-l border-white/10">
+          <span className="text-[10px] font-mono font-bold text-cyan-300 tracking-wider">
+            {formattedTime}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // --- ХАК ДЛЯ ЖИВОГО ТАЙМЕРА З АНІМАЦІЯМИ ТА БЕЙДЖЕМ ---
 function QuestTimer({ expiresAt }: { expiresAt?: string }) {
@@ -95,10 +138,12 @@ function MagicalRewardChip({ label, kind }: { label: string; kind: string }) {
 
 export function QuestCard({
   quest,
+  player,
   onComplete,
   variant = "retro"
 }: {
-  quest: any // Змінив на any або переконайся, що твій тип Quest включає `tree?: any` та `statRewardType?: string`
+  quest: any 
+  player?: any 
   onComplete?: (id: string) => void
   variant?: "retro" | "magical"
 }) {
@@ -108,13 +153,14 @@ export function QuestCard({
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-
-const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
+  // Smart mentor selection
+  const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
-  
 
+  // Energy connection
+  const { energy, formattedTime } = useEnergy(player?.mentorEnergy ?? 3, player?.lastEnergyRefillAt ?? new Date().toISOString())
+  const isOutOfEnergy = energy === 0
 
-  // Портал вимагає щоб компонент змонтувався
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -127,6 +173,7 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
     const newMessages = [...messages, { role: "user" as const, content: userMessage }]
     setMessages(newMessages)
     setIsLoading(true)
+    
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -135,22 +182,32 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
           messages: newMessages,
           questTitle: quest.title,
           questDescription: quest.description,
-          category: mentorCategory, // ПЕРЕДАЄМО ПРАВИЛЬНУ РОЛЬ В AI
+          category: mentorCategory, 
         }),
       })
-      if (!response.ok) throw new Error("AI response failed")
+      
       const data = await response.json()
-      setMessages([...newMessages, { role: "assistant", content: data.feedback || data.content || "Звіт прийнято." }])
+
+      // Handle energy block from backend
+      if (!response.ok) {
+        if (data.error === "OUT_OF_ENERGY") {
+          setMessages([...newMessages, { role: "assistant", content: data.content }])
+          return
+        }
+        throw new Error("AI response failed")
+      }
+      
+      setMessages([...newMessages, { role: "assistant", content: data.feedback || data.content || "Report accepted." }])
     } catch (err) {
       console.error(err)
-      setMessages([...newMessages, { role: "assistant", content: "Помилка зв'язку з Наставником." }])
+      setMessages([...newMessages, { role: "assistant", content: "Failed to connect with the Mentor." }])
     } finally {
       setIsLoading(false)
     }
   }
 
   // ======================================================================
-  // ВАРІАНТ 1: НОВИЙ МАГІЧНИЙ ДИЗАЙН (Використовується тільки в Node Drawer)
+  // VARIANT 1: MAGICAL DESIGN (Used only in Node Drawer)
   // ======================================================================
   if (variant === "magical") {
     if (quest.status === "completed") {
@@ -172,7 +229,6 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
           
           <h3 className="relative z-10 font-serif text-[15px] sm:text-[18px] italic text-foreground text-pretty drop-shadow-sm">{quest.title}</h3>
           
-          {/* ТАЙМЕР ОКРЕМИМ РЯДКОМ ПІД НАЗВОЮ */}
           {quest.expiresAt && (
             <div className="relative z-10 mb-2">
               <QuestTimer expiresAt={quest.expiresAt} />
@@ -209,7 +265,9 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
                 <Image src={mentor.avatar} alt={mentor.name} fill className="pixelated object-contain object-bottom drop-shadow-[0_10px_16px_rgba(0,0,0,0.6)] animate-idle" />
               </div>
               <div className="relative z-10 flex h-[85vh] max-h-[550px] w-full flex-col overflow-hidden rounded-xl border border-primary/30 bg-[#120d16] shadow-[0_0_40px_rgba(201,148,58,0.15)]">
-                <div className="flex items-center gap-3 border-b border-primary/20 bg-primary/5 p-4">
+                
+                {/* HEADER WITH ENERGY CRYSTALS */}
+                <div className="flex items-center gap-3 border-b border-primary/20 bg-primary/5 p-4 relative">
                   <div className="relative size-14 shrink-0 overflow-hidden rounded-full border border-primary/30 bg-background md:hidden">
                     <Image src={mentor.avatar} alt="" fill className="pixelated object-cover object-top animate-idle" />
                   </div>
@@ -217,11 +275,23 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
                     <h3 className="truncate font-pixel text-[13px] uppercase tracking-wider text-primary">{mentor.name}</h3>
                     <p className="mt-1 truncate font-serif text-[14px] italic text-muted-foreground">{mentor.title}</p>
                   </div>
-                  <button type="button" onClick={() => setIsAiModalOpen(false)} className="rounded-full border border-primary/20 bg-background/50 p-2 text-muted-foreground transition-all hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive">
+                  
+                  {/* Energy Widget */}
+                  <div className="hidden sm:block absolute right-16">
+                    <MentorEnergyDisplay energy={energy} formattedTime={formattedTime} />
+                  </div>
+
+                  <button type="button" onClick={() => setIsAiModalOpen(false)} className="rounded-full border border-primary/20 bg-background/50 p-2 text-muted-foreground transition-all hover:border-destructive/50 hover:bg-destructive/20 hover:text-destructive z-10">
                     <X className="size-5" aria-hidden="true" />
                   </button>
                 </div>
-                <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm">
+                
+                {/* Mobile Energy Widget */}
+                <div className="sm:hidden flex justify-center py-2 bg-[#0d0812] border-b border-primary/10">
+                   <MentorEnergyDisplay energy={energy} formattedTime={formattedTime} />
+                </div>
+
+                <div className="flex-1 space-y-4 overflow-y-auto p-4 text-sm relative">
                   {messages.length === 0 ? (
                     <div className="py-8 text-center text-muted-foreground animate-in fade-in duration-500">
                       <p className="mb-2 font-pixel text-[12px] uppercase text-primary">{mentor.name} is ready!</p>
@@ -241,12 +311,33 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
                     </div>
                   )}
                 </div>
-                <form onSubmit={handleSendAiMessage} className="flex items-center gap-3 border-t border-primary/20 bg-primary/5 p-4">
-                  <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} placeholder="Type a question or report..." className="flex-1 rounded-lg border border-border bg-[#0d0812] px-4 py-3 text-sm text-foreground placeholder:font-serif placeholder:italic placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
-                  <button type="submit" disabled={isLoading || !inputMessage.trim()} className="flex items-center justify-center rounded-lg border border-primary bg-primary/20 p-3 text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95 disabled:opacity-50 disabled:active:scale-100">
-                    <Send className="size-5" aria-hidden="true" />
-                  </button>
-                </form>
+                
+                {/* OMEGA BEAUTIFUL PAYWALL OR INPUT */}
+                <div className="relative">
+                  {isOutOfEnergy && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md border-t border-white/10 overflow-hidden">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-cyan-500/20 rounded-full blur-[40px] pointer-events-none" />
+                      <h3 className="text-[13px] font-pixel uppercase text-white mb-1 z-10 drop-shadow-md">Out of Energy</h3>
+                      <button 
+                        onClick={() => alert("Telegram Stars payment integration 🌟")}
+                        className="z-10 mt-2 relative group px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg font-pixel text-[9px] uppercase text-white shadow-[0_0_20px_theme(colors.orange.500/40)] hover:shadow-[0_0_30px_theme(colors.orange.500/60)] transition-all hover:scale-105 active:scale-95"
+                      >
+                        <span className="flex items-center gap-2">
+                          Drink Potion 🧪 
+                          <span className="bg-black/20 px-1.5 py-0.5 rounded text-[8px]">50 ⭐</span>
+                        </span>
+                        <div className="absolute inset-0 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  <form onSubmit={handleSendAiMessage} className={`flex items-center gap-3 border-t border-primary/20 bg-primary/5 p-4 transition-all duration-500 ${isOutOfEnergy ? 'opacity-10 blur-sm pointer-events-none' : 'opacity-100'}`}>
+                    <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} placeholder="Type a question or report..." className="flex-1 rounded-lg border border-border bg-[#0d0812] px-4 py-3 text-sm text-foreground placeholder:font-serif placeholder:italic placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
+                    <button type="submit" disabled={isLoading || !inputMessage.trim()} className="flex items-center justify-center rounded-lg border border-primary bg-primary/20 p-3 text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95 disabled:opacity-50 disabled:active:scale-100">
+                      <Send className="size-5" aria-hidden="true" />
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>, document.body
@@ -256,7 +347,7 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
   }
 
   // ======================================================================
-  // ВАРІАНТ 2: РЕТРО ДИЗАЙН (Для головної сторінки)
+  // VARIANT 2: RETRO DESIGN (For main page)
   // ======================================================================
 
   if (quest.status === "completed") {
@@ -278,7 +369,6 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
       <article className="hud-panel bg-card p-4 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
         <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
         
-        {/* ТАЙМЕР ОКРЕМИМ РЯДКОМ ПІД НАЗВОЮ */}
         {quest.expiresAt && (
           <div className="mt-1.5 mb-2">
             <QuestTimer expiresAt={quest.expiresAt} />
@@ -301,14 +391,7 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
               className="pixel-btn flex items-center gap-1.5 bg-secondary px-2 py-2 pr-3 font-pixel text-[8px] leading-none text-secondary-foreground transition-all hover:brightness-110 active:translate-y-[2px]"
             >
               <span className="hud-inset size-5 shrink-0 overflow-hidden bg-background">
-                <Image
-                  src={mentor.avatar}
-                  alt=""
-                  width={20}
-                  height={20}
-                  className="pixelated size-full object-cover animate-idle"
-                  aria-hidden="true"
-                />
+                <Image src={mentor.avatar} alt="" width={20} height={20} className="pixelated size-full object-cover animate-idle" aria-hidden="true" />
               </span>
               Ask {mentor.name}
             </button>
@@ -336,25 +419,24 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
         >
           <div className="relative flex w-full max-w-lg items-center animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
             <div className="mentor-figure-enter pointer-events-none relative z-20 -mr-16 hidden h-[340px] w-56 shrink-0 sm:block">
-              <Image
-                src={mentor.avatar}
-                alt={`${mentor.name}`}
-                fill
-                className="pixelated object-contain drop-shadow-[0_10px_16px_rgba(0,0,0,0.6)] animate-idle"
-              />
+              <Image src={mentor.avatar} alt={`${mentor.name}`} fill className="pixelated object-contain drop-shadow-[0_10px_16px_rgba(0,0,0,0.6)] animate-idle" />
             </div>
 
             <div className="hud-panel relative z-10 flex h-[520px] w-full flex-col bg-card p-4 shadow-2xl">
-              <div className="flex items-center gap-3 border-b-2 border-border pb-3">
+              
+              {/* RETRO HEADER */}
+              <div className="flex items-center gap-3 border-b-2 border-border pb-3 relative">
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-pixel text-[12px] uppercase text-foreground">{mentor.name}</h3>
                   <p className="mt-1 truncate text-xs text-muted-foreground">{mentor.title}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAiModalOpen(false)}
-                  className="pixel-btn bg-secondary p-2 text-secondary-foreground transition-all hover:bg-destructive hover:text-destructive-foreground active:translate-y-[2px]"
-                >
+                
+                {/* Retro Energy Widget */}
+                <div className="absolute right-12 scale-90 origin-right">
+                  <MentorEnergyDisplay energy={energy} formattedTime={formattedTime} />
+                </div>
+
+                <button type="button" onClick={() => setIsAiModalOpen(false)} className="pixel-btn bg-secondary p-2 text-secondary-foreground transition-all hover:bg-destructive hover:text-destructive-foreground active:translate-y-[2px] z-10">
                   <X className="size-4" aria-hidden="true" />
                 </button>
               </div>
@@ -363,7 +445,7 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
                 {quest.title}
               </p>
 
-              <div className="my-3 flex-1 space-y-3 overflow-y-auto pr-1 text-xs">
+              <div className="my-3 flex-1 space-y-3 overflow-y-auto pr-1 text-xs relative">
                 {messages.length === 0 ? (
                   <div className="py-8 text-center text-muted-foreground animate-in fade-in duration-500">
                     <p className="mb-1 font-pixel text-[11px] text-foreground">{mentor.name} is ready!</p>
@@ -371,17 +453,8 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
                   </div>
                 ) : (
                   messages.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className={`max-w-[85%] border-2 p-2.5 animate-in slide-in-from-bottom-2 fade-in duration-300 ${
-                        m.role === "user"
-                          ? "ml-auto border-primary/50 bg-primary/15 text-foreground"
-                          : "mr-auto border-border bg-secondary/50 text-foreground"
-                      }`}
-                    >
-                      <p className="mb-1 font-pixel text-[9px] uppercase text-muted-foreground">
-                        {m.role === "user" ? "You" : mentor.name}
-                      </p>
+                    <div key={idx} className={`max-w-[85%] border-2 p-2.5 animate-in slide-in-from-bottom-2 fade-in duration-300 ${m.role === "user" ? "ml-auto border-primary/50 bg-primary/15 text-foreground" : "mr-auto border-border bg-secondary/50 text-foreground"}`}>
+                      <p className="mb-1 font-pixel text-[9px] uppercase text-muted-foreground">{m.role === "user" ? "You" : mentor.name}</p>
                       <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
                     </div>
                   ))
@@ -393,23 +466,27 @@ const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.pr
                   </div>
                 )}
               </div>
-
-              <form onSubmit={handleSendAiMessage} className="flex items-center gap-2 border-t-2 border-border pt-3">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Type a question or report..."
-                  className="hud-inset flex-1 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !inputMessage.trim()}
-                  className="pixel-btn flex items-center justify-center bg-primary px-3 py-2 text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] disabled:opacity-50 disabled:active:translate-y-0"
-                >
-                  <Send className="size-3.5" aria-hidden="true" />
-                </button>
-              </form>
+              
+              {/* RETRO PAYWALL OR INPUT */}
+              <div className="relative">
+                {isOutOfEnergy && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-3 bg-card/90 backdrop-blur-sm border-t-2 border-border">
+                     <p className="text-[10px] font-pixel text-destructive mb-2 uppercase text-center">Energy Depleted</p>
+                     <button 
+                        onClick={() => alert("Telegram Stars payment integration 🌟")}
+                        className="pixel-btn bg-gold px-4 py-2 text-gold-foreground text-[9px] font-pixel uppercase hover:brightness-110 active:translate-y-[2px]"
+                      >
+                        Restore ⚡ (50 ⭐)
+                      </button>
+                  </div>
+                )}
+                <form onSubmit={handleSendAiMessage} className={`flex items-center gap-2 border-t-2 border-border pt-3 transition-all ${isOutOfEnergy ? 'opacity-20 blur-sm pointer-events-none' : ''}`}>
+                  <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} placeholder="Type a question or report..." className="hud-inset flex-1 bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
+                  <button type="submit" disabled={isLoading || !inputMessage.trim()} className="pixel-btn flex items-center justify-center bg-primary px-3 py-2 text-primary-foreground transition-all hover:brightness-110 active:translate-y-[2px] disabled:opacity-50 disabled:active:translate-y-0">
+                    <Send className="size-3.5" aria-hidden="true" />
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>, document.body

@@ -57,7 +57,9 @@ function toPlayer(
     avatarSkin: user.avatarSkin || "light",
     avatarHair: user.avatarHair || "short",
     avatarArmor: user.avatarArmor || "cloth",
-    hasDebuff: activeDebuffs.length > 0, // <--- ОСЬ ТУТ МАЄ БУТИ ЦЕЙ РЯДОК
+    hasDebuff: activeDebuffs.length > 0,
+    mentorEnergy: user.mentorEnergy,                            
+    lastEnergyRefillAt: user.lastEnergyRefillAt.toISOString(),
     stats: [
       { key: "INT", label: "Intelligence", value: Math.max(1, user.intStat - getDebuff("INT")), color: "int" },
       { key: "STR", label: "Strength", value: Math.max(1, user.strStat - getDebuff("STR")), color: "str" },

@@ -293,7 +293,8 @@ const handleComplete = (id: string) => {
             </div>
           )}
           <div className="animate-page-enter" style={{ animationDelay: "220ms" }}>
-            <QuestLog quests={mainQuests} onComplete={handleComplete} />
+
+            <QuestLog quests={mainQuests} player={player} onComplete={handleComplete} />
           </div>
         </>
       )}
@@ -326,6 +327,7 @@ const handleComplete = (id: string) => {
         tree={tree}
         node={openNode}
         quests={drawerQuests}
+        player={player}
         acceptedQuestIds={acceptedQuestIds}
         onAccept={handleAccept}
         onComplete={handleComplete}

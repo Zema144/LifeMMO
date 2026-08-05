@@ -9,6 +9,7 @@ export function NodeDrawer({
   tree,
   node,
   quests,
+  player,
   acceptedQuestIds,
   onAccept,
   onComplete, // <--- 1. ДОДАЛИ onComplete СЮДИ
@@ -17,6 +18,7 @@ export function NodeDrawer({
   tree: SkillTree
   node: SkillNode | null
   quests: Quest[]
+  player?: any
   acceptedQuestIds: string[]
   onAccept: (id: string) => void
   onComplete: (id: string) => void // <--- 2. ДОДАЛИ ТИП ДЛЯ onComplete
@@ -92,7 +94,7 @@ export function NodeDrawer({
                 
                 <div className={`relative z-10 overflow-hidden rounded-xl bg-card ${isActive ? 'border border-primary/80 shadow-[0_0_20px_rgba(201,148,58,0.2)]' : 'border border-border'}`}>
                   {/* 3. ТЕПЕР МИ ПЕРЕДАЄМО onComplete ПРАВИЛЬНО */}
-                  <QuestCard quest={quest} onComplete={onComplete} variant="magical" />
+                  <QuestCard quest={quest} player={player} onComplete={onComplete} variant="magical" />
                 </div>
               </div>
             )

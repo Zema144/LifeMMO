@@ -4,9 +4,11 @@ import type { Quest } from "@/lib/game-data"
 
 export function QuestLog({
   quests,
+  player,
   onComplete,
 }: {
   quests: Quest[]
+  player?: any
   onComplete: (id: string) => void
 }) {
   return (
@@ -27,7 +29,7 @@ export function QuestLog({
       ) : (
         <div className="flex flex-col gap-3">
           {quests.map((quest) => (
-            <QuestCard key={quest.id} quest={quest} onComplete={onComplete} />
+            <QuestCard key={quest.id} quest={quest} player={player} onComplete={onComplete} />
           ))}
         </div>
       )}

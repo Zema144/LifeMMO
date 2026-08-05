@@ -75,8 +75,10 @@ export type Player = {
   avatarSkin?: string
   avatarHair?: string
   avatarArmor?: string
-  hasDebuff?: boolean // Додано для контролю банера штрафів
+  hasDebuff?: boolean 
   stats: PlayerStat[]
+  mentorEnergy: number         
+  lastEnergyRefillAt: string   
 }
 
 export const classColorClasses: Record<ClassColor, { text: string; border: string; bg: string }> = {
