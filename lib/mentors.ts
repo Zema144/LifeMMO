@@ -38,23 +38,18 @@ const CATEGORY_TO_MENTOR: Record<string, MentorId> = {
 const DEFAULT_MENTOR = MENTORS.eldor
 
 export function getMentor(category?: string): Mentor {
-  if (!category) {
-    console.warn("⚠️ [LifeMMO] Квест не має поля 'category'! Встановлено Елдора за замовчуванням.");
-    return DEFAULT_MENTOR;
-  }
+  if (!category) return MENTORS.eldor;
 
-  // Приводимо до нижнього регістру для безпечного порівняння
-  const normalizedCategory = category.trim().toLowerCase();
+  const cat = category.trim().toUpperCase();
 
-  // Шукаємо співпадіння в ключах (теж привівши їх до нижнього регістру)
-  const foundKey = Object.keys(CATEGORY_TO_MENTOR).find(
-    (key) => key.toLowerCase() === normalizedCategory
-  );
+  // Громгар (Воїни, Фітнес)
+  if (cat === "WARRIOR" || cat === "STR" || cat === "DEX" || cat === "PHYSICAL") return MENTORS.gromgar;
+  
+  // Лірана (Ельфи, Кулінарія, Мови)
+  if (cat === "ELF" || cat === "CHA" || cat === "SOFT-SKILLS") return MENTORS.lirana;
+  
+  // Елдор (Маги, Програмування)
+  if (cat === "WIZARD" || cat === "INT" || cat === "CRAFT" || cat === "HARD-SKILLS") return MENTORS.eldor;
 
-  if (foundKey) {
-    return MENTORS[CATEGORY_TO_MENTOR[foundKey]];
-  }
-
-  console.warn(`⚠️ [LifeMMO] Невідома категорія квесту: "${category}". Встановлено Елдора.`);
-  return DEFAULT_MENTOR;
+  return MENTORS.eldor;
 }

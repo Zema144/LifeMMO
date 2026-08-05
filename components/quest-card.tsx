@@ -114,9 +114,11 @@ console.log(`[DEBUG] Quest: ${quest.title}`, {
     stat: quest?.tree?.primaryStat 
   })
 
-  // РОЗУМНИЙ ВИБІР МЕНТОРА: пріоритет на роль з дерева, потім стат з дерева, потім старий формат
-  const mentorCategory = quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
+const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
+  
+  // Додай цей лог, щоб переконатися, що все запрацювало:
+  console.log(`[QuestCard] Шукаємо: ${mentorCategory} -> Знайшли: ${mentor.name}`)
 
   // Портал вимагає щоб компонент змонтувався
   useEffect(() => {
