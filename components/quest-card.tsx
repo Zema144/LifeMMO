@@ -166,11 +166,16 @@ export function QuestCard({
 
       if (!res.ok) throw new Error(data.error)
 
-      // НАДІЙНІША ПЕРЕВИРКА TELEGRAM WEBAPP
-      const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
+      // Безпечна перевірка з невеликим очікуванням (якщо Telegram SDK ще ініціалізується)
+      let tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
 
-      // Перевіряємо наявність об'єкта та мінімальних даних ініціалізації
-      if (tg && (tg.initData || tg.initDataUnsafe?.user)) {
+      // Якщо об'єкта немає одразу, дамо йому 300мс на завантаження
+      if (!tg || (!tg.initData && !tg.initDataUnsafe?.user)) {
+        await new Promise((resolve) => setTimeout(resolve, 300))
+        tg = (window as any).Telegram?.WebApp
+      }
+
+      if (tg && tg.openInvoice) {
         tg.openInvoice(data.invoiceUrl, (status: string) => {
           if (status === 'paid') {
             alert("Payment successful! Energy restored.")
@@ -180,7 +185,7 @@ export function QuestCard({
           }
         })
       } else {
-        // Якщо це справді звичайний браузер (не Telegram)
+        // Якщо це справді відкрили звичайний десктопний браузер без Telegram
         alert("Telegram Stars can only be purchased inside the Telegram Mini App.")
       }
     } catch (err) {
