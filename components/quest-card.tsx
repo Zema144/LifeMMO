@@ -108,17 +108,11 @@ export function QuestCard({
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-console.log(`[DEBUG] Quest: ${quest.title}`, { 
-    questNpcRole: quest?.npcRole, 
-    treeNpcRole: quest?.tree?.npcRole,
-    stat: quest?.tree?.primaryStat 
-  })
 
 const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
   
-  // Додай цей лог, щоб переконатися, що все запрацювало:
-  console.log(`[QuestCard] Шукаємо: ${mentorCategory} -> Знайшли: ${mentor.name}`)
+
 
   // Портал вимагає щоб компонент змонтувався
   useEffect(() => {
