@@ -111,7 +111,7 @@ CRITICAL RULE: Always respond in the EXACT same language that the user is writin
 CRITICAL RULE: Always respond in the EXACT same language that the user is writing in.`
     }
 
-    const selectedModel = google("models/gemini-1.5-flash-latest") 
+const selectedModel = google("gemini-1.5-flash")
 
     if (mode === "verify") {
       const { object } = await generateObject({
