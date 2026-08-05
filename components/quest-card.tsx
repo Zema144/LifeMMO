@@ -166,9 +166,11 @@ export function QuestCard({
 
       if (!res.ok) throw new Error(data.error)
 
+      // НАДІЙНІША ПЕРЕВИРКА TELEGRAM WEBAPP
       const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
 
-      if (tg && tg.initData) {
+      // Перевіряємо наявність об'єкта та мінімальних даних ініціалізації
+      if (tg && (tg.initData || tg.initDataUnsafe?.user)) {
         tg.openInvoice(data.invoiceUrl, (status: string) => {
           if (status === 'paid') {
             alert("Payment successful! Energy restored.")
@@ -178,6 +180,7 @@ export function QuestCard({
           }
         })
       } else {
+        // Якщо це справді звичайний браузер (не Telegram)
         alert("Telegram Stars can only be purchased inside the Telegram Mini App.")
       }
     } catch (err) {
