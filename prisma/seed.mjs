@@ -26,11 +26,6 @@ const skillTrees = [
     isStarter: true,
     quests: [
       {
-        quests: [
-      // ==========================================
-      // --- NODE 1: THE INITIALIZATION (de-n1-setup) - 4 Quests ---
-      // ==========================================
-      {
         slug: "de-setup-1",
         kind: "MAIN",
         title: "The Code Forge",
@@ -1110,7 +1105,6 @@ const skillTrees = [
         hasAiHelper: true,
         nodeSlug: "de-n7-dbt",
       },
-    ],
     ],
     nodes: [
       {
@@ -4717,8 +4711,6 @@ const skillTrees = [
         y: 404,
         prereqs: ["fin-n3-market"],
       },
-    ],
-  },
     ],
   },
   {

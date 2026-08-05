@@ -72,20 +72,26 @@ export function PageClient({
   const treeQuests = questState[selected] ?? []
   const showDebuff = player.hasDebuff && activeTab === "quests"
 
-  const drawerQuests = useMemo(() => {
+const drawerQuests = useMemo(() => {
     if (!openNode?.questIds) return []
-    return treeQuests.filter((quest) => openNode.questIds!.includes(quest.id))
-  }, [openNode, treeQuests])
+    return treeQuests
+      .filter((quest) => openNode.questIds!.includes(quest.id))
+      .map((quest) => ({ ...quest, npcRole: tree.npcRole })) // <--- ОСЬ МАГІЯ
+  }, [openNode, treeQuests, tree])
 
   const mainQuests = useMemo(() => {
     return acceptedQuestIds
       .map((id) => {
         const entry = treeIdByQuestId[id]
         if (!entry) return null
-        return questState[entry.treeId]?.find((quest) => quest.id === id) ?? null
+        const rawQuest = questState[entry.treeId]?.find((quest) => quest.id === id) ?? null
+        if (!rawQuest) return null
+        
+        const parentTree = initialSkillTrees.find(t => t.id === entry.treeId)
+        return { ...rawQuest, npcRole: parentTree?.npcRole || "INT" } // <--- ОСЬ МАГІЯ 2
       })
       .filter((quest): quest is Quest => quest !== null && quest.status !== "completed")
-  }, [acceptedQuestIds, questState, treeIdByQuestId])
+  }, [acceptedQuestIds, questState, treeIdByQuestId, initialSkillTrees])
 
 const handleComplete = (id: string) => {
     const entry = treeIdByQuestId[id]
