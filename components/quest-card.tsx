@@ -108,6 +108,12 @@ export function QuestCard({
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+console.log(`[DEBUG] Quest: ${quest.title}`, { 
+    questNpcRole: quest?.npcRole, 
+    treeNpcRole: quest?.tree?.npcRole,
+    stat: quest?.tree?.primaryStat 
+  })
+
   // РОЗУМНИЙ ВИБІР МЕНТОРА: пріоритет на роль з дерева, потім стат з дерева, потім старий формат
   const mentorCategory = quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
