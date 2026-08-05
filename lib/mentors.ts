@@ -1,4 +1,3 @@
-
 export type MentorId = "gromgar" | "eldor" | "lirana"
 
 export type Mentor = {
@@ -15,18 +14,26 @@ const MENTORS: Record<MentorId, Mentor> = {
   lirana: { id: "lirana", name: "Lirana", title: "Elf Princess", avatar: "/mentors/lirana.png", accent: "chart-5" },
 }
 
-// Same category strings the route checks against — keep these two files in sync.
+// Додали всі npcRole та primaryStat з нашої бази даних
 const CATEGORY_TO_MENTOR: Record<string, MentorId> = {
+  // За статами (primaryStat)
   STR: "gromgar",
   DEX: "gromgar",
-  physical: "gromgar",
   INT: "eldor",
-  "hard-skills": "eldor",
   CHA: "lirana",
-  "soft-skills": "lirana",
   CRAFT: "eldor",
-}
 
+  // Старі категорії
+  physical: "gromgar",
+  "hard-skills": "eldor",
+  "soft-skills": "lirana",
+
+  WARRIOR: "gromgar",
+  WIZARD: "eldor",
+  ELF: "lirana",
+  MERCHANT: "lirana", // Фінанси (Харизма)
+  BARD: "lirana",     // Музика (Харизма)
+}
 
 const DEFAULT_MENTOR = MENTORS.eldor
 
@@ -51,4 +58,3 @@ export function getMentor(category?: string): Mentor {
   console.warn(`⚠️ [LifeMMO] Невідома категорія квесту: "${category}". Встановлено Елдора.`);
   return DEFAULT_MENTOR;
 }
-

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Image from "next/image"
 import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "lucide-react"
-import type { Quest } from "@/lib/game-data"
+import type { Quest } from "@/lib/game-data" // Переконайся, що тип Quest тепер містить поле tree?: any
 import { getMentor } from "@/lib/mentors"
 
 // --- ХАК ДЛЯ ЖИВОГО ТАЙМЕРА З АНІМАЦІЯМИ ТА БЕЙДЖЕМ ---
@@ -98,7 +98,7 @@ export function QuestCard({
   onComplete,
   variant = "retro"
 }: {
-  quest: Quest
+  quest: any // Змінив на any або переконайся, що твій тип Quest включає `tree?: any` та `statRewardType?: string`
   onComplete?: (id: string) => void
   variant?: "retro" | "magical"
 }) {
@@ -108,7 +108,9 @@ export function QuestCard({
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  const mentor = getMentor(quest.statRewardType || "INT")
+  // РОЗУМНИЙ ВИБІР МЕНТОРА: пріоритет на роль з дерева, потім стат з дерева, потім старий формат
+  const mentorCategory = quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
+  const mentor = getMentor(mentorCategory)
 
   // Портал вимагає щоб компонент змонтувався
   useEffect(() => {
@@ -131,7 +133,7 @@ export function QuestCard({
           messages: newMessages,
           questTitle: quest.title,
           questDescription: quest.description,
-          category: quest.statRewardType || "INT", 
+          category: mentorCategory, // ПЕРЕДАЄМО ПРАВИЛЬНУ РОЛЬ В AI
         }),
       })
       if (!response.ok) throw new Error("AI response failed")
@@ -178,7 +180,7 @@ export function QuestCard({
           <p className="relative z-10 mt-1.5 sm:mt-2 text-[12px] sm:text-[14px] leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
           
           <div className="relative z-10 mt-4 sm:mt-5 flex flex-wrap gap-2 sm:gap-2.5">
-            {quest.rewards.map((r) => <MagicalRewardChip key={r.label} label={r.label} kind={r.kind} />)}
+            {quest.rewards.map((r: any) => <MagicalRewardChip key={r.label} label={r.label} kind={r.kind} />)}
           </div>
           
           <div className="relative z-10 mt-5 sm:mt-7 flex flex-wrap gap-2.5 sm:gap-3">
@@ -284,7 +286,7 @@ export function QuestCard({
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">{quest.description}</p>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {quest.rewards.map((r) => (
+          {quest.rewards.map((r: any) => (
             <RewardChip key={r.label} label={r.label} kind={r.kind} />
           ))}
         </div>
