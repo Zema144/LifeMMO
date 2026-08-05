@@ -9,9 +9,50 @@ import { useEnergy } from "@/hooks/use-energy" // <--- Твій винесени
 
 const MAX_ENERGY = 3
 
+
+
 // ======================================================================
 // ПРЕМІУМ ВІДЖЕТ ЕНЕРГІЇ
 // ======================================================================
+
+  const [isBuying, setIsBuying] = useState(false)
+
+  // Функція покупки
+  const handleBuyPotion = async () => {
+    setIsBuying(true)
+    try {
+      // 1. Просимо бекенд створити рахунок
+      const res = await fetch('/api/payments/stars/create-invoice', { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error)
+
+      // 2. Перевіряємо, чи ми в Телеграмі
+      const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
+
+      if (tg && tg.initData) {
+        // Відкриваємо нативне вікно оплати
+        tg.openInvoice(data.invoiceUrl, (status: string) => {
+          if (status === 'paid') {
+            // Тут ми поки що просто показуємо алерт, але потім зробимо красиве сповіщення
+            alert("Payment successful! Energy restored (backend webhook will process this soon).")
+            // Можна зробити window.location.reload() або router.refresh() 
+          } else if (status === 'failed') {
+            alert("Payment failed. Please try again.")
+          }
+        })
+      } else {
+        // Якщо юзер сидить з браузера, а не з Телеграму
+        alert("Telegram Stars can only be purchased inside the Telegram Mini App.")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Something went wrong.")
+    } finally {
+      setIsBuying(false)
+    }
+  }
+
 function MentorEnergyDisplay({ energy, formattedTime }: { energy: number, formattedTime: string | null }) {
   return (
     <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full shadow-lg">
@@ -320,7 +361,8 @@ export function QuestCard({
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-cyan-500/20 rounded-full blur-[40px] pointer-events-none" />
                       <h3 className="text-[13px] font-pixel uppercase text-white mb-1 z-10 drop-shadow-md">Out of Energy</h3>
                       <button 
-                        onClick={() => alert("Telegram Stars payment integration 🌟")}
+                        onClick={handleBuyPotion}
+                        disabled={isBuying}
                         className="z-10 mt-2 relative group px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg font-pixel text-[9px] uppercase text-white shadow-[0_0_20px_theme(colors.orange.500/40)] hover:shadow-[0_0_30px_theme(colors.orange.500/60)] transition-all hover:scale-105 active:scale-95"
                       >
                         <span className="flex items-center gap-2">
@@ -474,10 +516,11 @@ export function QuestCard({
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-3 bg-card/90 backdrop-blur-sm border-t-2 border-border">
                      <p className="text-[10px] font-pixel text-destructive mb-2 uppercase text-center">Energy Depleted</p>
                      <button 
-                        onClick={() => alert("Telegram Stars payment integration 🌟")}
+                        onClick={handleBuyPotion}
+                          disabled={isBuying}
                         className="pixel-btn bg-gold px-4 py-2 text-gold-foreground text-[9px] font-pixel uppercase hover:brightness-110 active:translate-y-[2px]"
                       >
-                        Restore ⚡ (50 ⭐)
+                        Restore ⚡ (15 ⭐)
                       </button>
                   </div>
                 )}

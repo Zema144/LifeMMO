@@ -63,6 +63,35 @@ enum Gender {
   FEMALE
 }
 
+enum PaymentProvider {
+  TELEGRAM_STARS
+  PAYPAL
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  userId        String
+  provider      PaymentProvider
+  amount        Int               
+  currency      String            @default("XTR") 
+  itemBought    String            
+  status        TransactionStatus @default(PENDING)
+  providerTxId  String?           @unique 
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("transactions")
+}
+
 model User {
   id                 String            @id @default(cuid())
   name               String?
@@ -102,6 +131,7 @@ model User {
   avatarSkin         String            @default("light")
   avatarHair         String            @default("short")
   avatarArmor        String            @default("cloth")
+  transactions       Transaction[]
 
   @@map("users")
 }
