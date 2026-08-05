@@ -44,7 +44,7 @@ export function useEnergy(initialEnergy: number, initialLastRefillAt: string) {
     ? new Date(timeLeft).toISOString().substring(11, 19) 
     : null
 
-\  const spendEnergy = () => {
+  const spendEnergy = () => {
     setEnergy((prev) => {
       if (prev === MAX_ENERGY) {
         setLastRefillAt(new Date().toISOString()) // Запускаємо таймер з нуля
