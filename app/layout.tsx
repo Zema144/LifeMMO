@@ -3,6 +3,7 @@ import { AuthProvider } from "@/components/auth-provider"
 import type { Metadata, Viewport } from 'next'
 import { Press_Start_2P, VT323 } from 'next/font/google'
 import { Providers } from './providers'
+import Script from 'next/script' // <--- Додаємо імпорт Script від Next.js
 import './globals.css'
 
 const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-body' })
@@ -30,6 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${vt323.variable} ${pressStart.variable}`} suppressHydrationWarning>
+      <head>
+        <Script 
+          src="https://telegram.org/js/telegram-web-app.js" 
+          strategy="beforeInteractive" 
+        />
+      </head>
       <body className="bg-background font-sans antialiased">
         <AuthProvider>
           <Providers>{children}</Providers>

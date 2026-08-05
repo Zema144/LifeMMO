@@ -166,28 +166,38 @@ export function QuestCard({
 
       if (!res.ok) throw new Error(data.error)
 
-      // Безпечна перевірка з невеликим очікуванням (якщо Telegram SDK ще ініціалізується)
-      let tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
+      const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
 
-      // Якщо об'єкта немає одразу, дамо йому 300мс на завантаження
-      if (!tg || (!tg.initData && !tg.initDataUnsafe?.user)) {
-        await new Promise((resolve) => setTimeout(resolve, 300))
-        tg = (window as any).Telegram?.WebApp
+      // Перевіряємо чи є об'єкт Telegram WebApp і чи підтримується метод
+      if (tg && tg.openInvoice) {
+        try {
+          tg.openInvoice(data.invoiceUrl, (status: string) => {
+            if (status === 'paid') {
+              alert("Payment successful! Energy restored.")
+              window.location.reload()
+            } else if (status === 'cancelled') {
+              console.log("Payment cancelled")
+            } else {
+              alert("Payment status: " + status)
+            }
+          })
+          setIsBuying(false)
+          return
+        } catch (invoiceErr) {
+          console.warn("openInvoice native method failed, falling back to direct link:", invoiceErr)
+        }
       }
 
-      if (tg && tg.openInvoice) {
-        tg.openInvoice(data.invoiceUrl, (status: string) => {
-          if (status === 'paid') {
-            alert("Payment successful! Energy restored.")
-            window.location.reload()
-          } else if (status === 'failed') {
-            alert("Payment failed. Please try again.")
-          }
-        })
+      if (data.invoiceUrl) {
+        if (tg && tg.openLink) {
+          tg.openLink(data.invoiceUrl)
+        } else {
+          window.open(data.invoiceUrl, '_blank')
+        }
       } else {
-        // Якщо це справді відкрили звичайний десктопний браузер без Telegram
         alert("Telegram Stars can only be purchased inside the Telegram Mini App.")
       }
+
     } catch (err) {
       console.error(err)
       alert("Something went wrong.")
