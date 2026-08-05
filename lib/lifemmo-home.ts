@@ -249,6 +249,8 @@ export async function getHomeData() {
       icon: tree.icon as SkillTree["icon"],
       classColor: classColorMap[tree.classColor],
       level: tree.displayLevel,
+      npcRole: tree.npcRole,          // <--- ДОДАНО: передаємо роль
+      primaryStat: tree.primaryStat,  // <--- ДОДАНО: передаємо стат
       quests: treeQuests,
       nodes,
     }
