@@ -5,54 +5,13 @@ import { createPortal } from "react-dom"
 import Image from "next/image"
 import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "lucide-react"
 import { getMentor } from "@/lib/mentors"
-import { useEnergy } from "@/hooks/use-energy" // <--- Твій винесений хук
+import { useEnergy } from "@/hooks/use-energy"
 
 const MAX_ENERGY = 3
 
-
-
 // ======================================================================
-// ПРЕМІУМ ВІДЖЕТ ЕНЕРГІЇ
+// ПРЕМІУМ ВІДЖЕТ ЕНЕРГІЇ (Чистий UI-компонент без хуківсередині)
 // ======================================================================
-
-  const [isBuying, setIsBuying] = useState(false)
-
-  // Функція покупки
-  const handleBuyPotion = async () => {
-    setIsBuying(true)
-    try {
-      // 1. Просимо бекенд створити рахунок
-      const res = await fetch('/api/payments/stars/create-invoice', { method: 'POST' })
-      const data = await res.json()
-
-      if (!res.ok) throw new Error(data.error)
-
-      // 2. Перевіряємо, чи ми в Телеграмі
-      const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
-
-      if (tg && tg.initData) {
-        // Відкриваємо нативне вікно оплати
-        tg.openInvoice(data.invoiceUrl, (status: string) => {
-          if (status === 'paid') {
-            // Тут ми поки що просто показуємо алерт, але потім зробимо красиве сповіщення
-            alert("Payment successful! Energy restored (backend webhook will process this soon).")
-            // Можна зробити window.location.reload() або router.refresh() 
-          } else if (status === 'failed') {
-            alert("Payment failed. Please try again.")
-          }
-        })
-      } else {
-        // Якщо юзер сидить з браузера, а не з Телеграму
-        alert("Telegram Stars can only be purchased inside the Telegram Mini App.")
-      }
-    } catch (err) {
-      console.error(err)
-      alert("Something went wrong.")
-    } finally {
-      setIsBuying(false)
-    }
-  }
-
 function MentorEnergyDisplay({ energy, formattedTime }: { energy: number, formattedTime: string | null }) {
   return (
     <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full shadow-lg">
@@ -82,7 +41,7 @@ function MentorEnergyDisplay({ energy, formattedTime }: { energy: number, format
 
       {formattedTime && (
         <div className="flex items-center gap-2 pl-2 border-l border-white/10">
-          <span className="text-[14px] font-mono font-bold text-amber-400 drop-shadow-md tracking-wider">
+          <span className="text-[10px] font-mono font-bold text-amber-400 drop-shadow-md tracking-wider">
             {formattedTime}
           </span>
         </div>
@@ -91,7 +50,6 @@ function MentorEnergyDisplay({ energy, formattedTime }: { energy: number, format
   )
 }
 
-// --- ХАК ДЛЯ ЖИВОГО ТАЙМЕРА З АНІМАЦІЯМИ ТА БЕЙДЖЕМ ---
 function QuestTimer({ expiresAt }: { expiresAt?: string }) {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number; isExpired: boolean } | null>(null)
 
@@ -136,10 +94,7 @@ function QuestTimer({ expiresAt }: { expiresAt?: string }) {
         ? "border-amber-500/60 bg-amber-500/15 text-amber-400 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.2)]" 
         : "border-primary/40 bg-primary/10 text-primary shadow-[0_0_8px_rgba(201,147,46,0.15)]"
     }`}>
-      <Hourglass 
-        className={`size-3 ${isUrgent ? 'animate-[spin_1.5s_linear_infinite]' : 'animate-[spin_4s_linear_infinite]'}`} 
-        aria-hidden="true" 
-      />
+      <Hourglass className={`size-3 ${isUrgent ? 'animate-[spin_1.5s_linear_infinite]' : 'animate-[spin_4s_linear_infinite]'}`} aria-hidden="true" />
       <span>
         {timeLeft.hours}H {String(timeLeft.minutes).padStart(2, '0')}M {String(timeLeft.seconds).padStart(2, '0')}S LEFT
       </span>
@@ -147,24 +102,18 @@ function QuestTimer({ expiresAt }: { expiresAt?: string }) {
   )
 }
 
-// --- 1. ОРИГІНАЛЬНИЙ ЧІП (ДЛЯ ГОЛОВНОЇ СТОРІНКИ) ---
 function RewardChip({ label, kind }: { label: string; kind: string }) {
   const isGold = kind === "gold"
   return (
-    <span
-      className={`shine-effect inline-flex items-center gap-1 border-2 px-2 py-1 font-pixel text-[8px] leading-none transition-transform duration-200 hover:-translate-y-1 hover:scale-105 cursor-default ${
-        isGold
-          ? "border-gold bg-gold/15 text-gold shadow-[0_0_8px_rgba(251,191,36,0.35)]"
-          : "border-primary bg-primary/15 text-primary shadow-[0_0_8px_rgba(99,102,241,0.3)]"
-      }`}
-    >
+    <span className={`shine-effect inline-flex items-center gap-1 border-2 px-2 py-1 font-pixel text-[8px] leading-none transition-transform duration-200 hover:-translate-y-1 hover:scale-105 cursor-default ${
+      isGold ? "border-gold bg-gold/15 text-gold shadow-[0_0_8px_rgba(251,191,36,0.35)]" : "border-primary bg-primary/15 text-primary shadow-[0_0_8px_rgba(99,102,241,0.3)]"
+    }`}>
       {isGold ? <Coins className="size-3 relative z-10" aria-hidden="true" /> : <Zap className="size-3 relative z-10" aria-hidden="true" />}
       <span className="relative z-10">{isGold ? `+${label}G` : `+${label}`}</span>
     </span>
   )
 }
 
-// --- 2. МАГІЧНИЙ ЧІП (ТІЛЬКИ ДЛЯ ДЕРЕВА НАВИЧОК) ---
 function MagicalRewardChip({ label, kind }: { label: string; kind: string }) {
   const isGold = kind === "gold"
   return (
@@ -192,19 +141,52 @@ export function QuestCard({
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isBuying, setIsBuying] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // Smart mentor selection
+  // ВСІ ХУКИ ВИКЛИКАЮТЬСЯ ТУТ (на самому верху компонента суворо за правилами React)
   const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
 
-  // Energy connection
-  const { energy, formattedTime, spendEnergy } = useEnergy(player?.mentorEnergy ?? 3, player?.lastEnergyRefillAt ?? new Date().toISOString())
+  const { energy, formattedTime, spendEnergy } = useEnergy(
+    player?.mentorEnergy ?? 3, 
+    player?.lastEnergyRefillAt ?? new Date().toISOString()
+  )
   const isOutOfEnergy = energy === 0
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const handleBuyPotion = async () => {
+    setIsBuying(true)
+    try {
+      const res = await fetch('/api/payments/stars/create-invoice', { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error)
+
+      const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null
+
+      if (tg && tg.initData) {
+        tg.openInvoice(data.invoiceUrl, (status: string) => {
+          if (status === 'paid') {
+            alert("Payment successful! Energy restored.")
+            window.location.reload()
+          } else if (status === 'failed') {
+            alert("Payment failed. Please try again.")
+          }
+        })
+      } else {
+        alert("Telegram Stars can only be purchased inside the Telegram Mini App.")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("Something went wrong.")
+    } finally {
+      setIsBuying(false)
+    }
+  }
 
   const handleSendAiMessage = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -229,7 +211,6 @@ export function QuestCard({
       
       const data = await response.json()
 
-      // Handle energy block from backend
       if (!response.ok) {
         if (data.error === "OUT_OF_ENERGY") {
           setMessages([...newMessages, { role: "assistant", content: data.content }])
@@ -237,8 +218,8 @@ export function QuestCard({
         }
         throw new Error("AI response failed")
       }
-      spendEnergy()
-
+      
+      spendEnergy() 
       setMessages([...newMessages, { role: "assistant", content: data.feedback || data.content || "Report accepted." }])
     } catch (err) {
       console.error(err)
@@ -248,9 +229,6 @@ export function QuestCard({
     }
   }
 
-  // ======================================================================
-  // VARIANT 1: MAGICAL DESIGN (Used only in Node Drawer)
-  // ======================================================================
   if (variant === "magical") {
     if (quest.status === "completed") {
       return (
@@ -308,7 +286,6 @@ export function QuestCard({
               </div>
               <div className="relative z-10 flex h-[85vh] max-h-[550px] w-full flex-col overflow-hidden rounded-xl border border-primary/30 bg-[#120d16] shadow-[0_0_40px_rgba(201,148,58,0.15)]">
                 
-                {/* HEADER WITH ENERGY CRYSTALS */}
                 <div className="flex items-center gap-3 border-b border-primary/20 bg-primary/5 p-4 relative">
                   <div className="relative size-14 shrink-0 overflow-hidden rounded-full border border-primary/30 bg-background md:hidden">
                     <Image src={mentor.avatar} alt="" fill className="pixelated object-cover object-top animate-idle" />
@@ -318,7 +295,6 @@ export function QuestCard({
                     <p className="mt-1 truncate font-serif text-[14px] italic text-muted-foreground">{mentor.title}</p>
                   </div>
                   
-                  {/* Energy Widget */}
                   <div className="hidden sm:block absolute right-16">
                     <MentorEnergyDisplay energy={energy} formattedTime={formattedTime} />
                   </div>
@@ -328,7 +304,6 @@ export function QuestCard({
                   </button>
                 </div>
                 
-                {/* Mobile Energy Widget */}
                 <div className="sm:hidden flex justify-center py-2 bg-[#0d0812] border-b border-primary/10">
                    <MentorEnergyDisplay energy={energy} formattedTime={formattedTime} />
                 </div>
@@ -354,7 +329,6 @@ export function QuestCard({
                   )}
                 </div>
                 
-                {/* OMEGA BEAUTIFUL PAYWALL OR INPUT */}
                 <div className="relative">
                   {isOutOfEnergy && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md border-t border-white/10 overflow-hidden">
@@ -363,11 +337,11 @@ export function QuestCard({
                       <button 
                         onClick={handleBuyPotion}
                         disabled={isBuying}
-                        className="z-10 mt-2 relative group px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg font-pixel text-[9px] uppercase text-white shadow-[0_0_20px_theme(colors.orange.500/40)] hover:shadow-[0_0_30px_theme(colors.orange.500/60)] transition-all hover:scale-105 active:scale-95"
+                        className="z-10 mt-2 relative group px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg font-pixel text-[9px] uppercase text-white shadow-[0_0_20px_theme(colors.orange.500/40)] hover:shadow-[0_0_30px_theme(colors.orange.500/60)] transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
                       >
                         <span className="flex items-center gap-2">
-                          Drink Potion 🧪 
-                          <span className="bg-black/20 px-1.5 py-0.5 rounded text-[8px]">50 ⭐</span>
+                          {isBuying ? "Processing..." : "Drink Potion 🧪"} 
+                          <span className="bg-black/20 px-1.5 py-0.5 rounded text-[8px]">15 ⭐</span>
                         </span>
                         <div className="absolute inset-0 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
@@ -388,10 +362,6 @@ export function QuestCard({
       </>
     )
   }
-
-  // ======================================================================
-  // VARIANT 2: RETRO DESIGN (For main page)
-  // ======================================================================
 
   if (quest.status === "completed") {
     return (
@@ -467,14 +437,12 @@ export function QuestCard({
 
             <div className="hud-panel relative z-10 flex h-[520px] w-full flex-col bg-card p-4 shadow-2xl">
               
-              {/* RETRO HEADER */}
               <div className="flex items-center gap-3 border-b-2 border-border pb-3 relative">
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-pixel text-[12px] uppercase text-foreground">{mentor.name}</h3>
                   <p className="mt-1 truncate text-xs text-muted-foreground">{mentor.title}</p>
                 </div>
                 
-                {/* Retro Energy Widget */}
                 <div className="absolute right-12 scale-90 origin-right">
                   <MentorEnergyDisplay energy={energy} formattedTime={formattedTime} />
                 </div>
@@ -510,17 +478,16 @@ export function QuestCard({
                 )}
               </div>
               
-              {/* RETRO PAYWALL OR INPUT */}
               <div className="relative">
                 {isOutOfEnergy && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-3 bg-card/90 backdrop-blur-sm border-t-2 border-border">
                      <p className="text-[10px] font-pixel text-destructive mb-2 uppercase text-center">Energy Depleted</p>
                      <button 
                         onClick={handleBuyPotion}
-                          disabled={isBuying}
-                        className="pixel-btn bg-gold px-4 py-2 text-gold-foreground text-[9px] font-pixel uppercase hover:brightness-110 active:translate-y-[2px]"
+                        disabled={isBuying}
+                        className="pixel-btn bg-gold px-4 py-2 text-gold-foreground text-[9px] font-pixel uppercase hover:brightness-110 active:translate-y-[2px] disabled:opacity-50"
                       >
-                        Restore ⚡ (15 ⭐)
+                        {isBuying ? "Processing..." : "Restore ⚡ (15 ⭐)"}
                       </button>
                   </div>
                 )}
