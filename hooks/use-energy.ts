@@ -3,11 +3,14 @@ import { useState, useEffect } from "react"
 const MAX_ENERGY = 3
 const REFILL_INTERVAL_MS = 8 * 60 * 60 * 1000 // 4 години
 
-export function useEnergy(initialEnergy: number, lastRefillAt: string) {
+export function useEnergy(initialEnergy: number, initialLastRefillAt: string) {
   const [energy, setEnergy] = useState(initialEnergy)
+  const [lastRefillAt, setLastRefillAt] = useState(initialLastRefillAt)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
 
   useEffect(() => {
+    if (!lastRefillAt) return
+
     const calculateEnergy = () => {
       const now = new Date().getTime()
       const refillTime = new Date(lastRefillAt).getTime()
@@ -37,10 +40,18 @@ export function useEnergy(initialEnergy: number, lastRefillAt: string) {
     return () => clearInterval(interval)
   }, [energy, lastRefillAt])
 
-  // Форматуємо час як HH:MM:SS
   const formattedTime = timeLeft !== null 
     ? new Date(timeLeft).toISOString().substring(11, 19) 
     : null
 
-  return { energy, formattedTime }
+\  const spendEnergy = () => {
+    setEnergy((prev) => {
+      if (prev === MAX_ENERGY) {
+        setLastRefillAt(new Date().toISOString()) // Запускаємо таймер з нуля
+      }
+      return Math.max(0, prev - 1)
+    })
+  }
+
+  return { energy, formattedTime, spendEnergy }
 }

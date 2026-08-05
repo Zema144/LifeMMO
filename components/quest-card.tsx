@@ -41,7 +41,7 @@ function MentorEnergyDisplay({ energy, formattedTime }: { energy: number, format
 
       {formattedTime && (
         <div className="flex items-center gap-2 pl-2 border-l border-white/10">
-          <span className="text-[10px] font-mono font-bold text-cyan-300 tracking-wider">
+          <span className="text-[14px] font-mono font-bold text-amber-400 drop-shadow-md tracking-wider">
             {formattedTime}
           </span>
         </div>
@@ -158,7 +158,7 @@ export function QuestCard({
   const mentor = getMentor(mentorCategory)
 
   // Energy connection
-  const { energy, formattedTime } = useEnergy(player?.mentorEnergy ?? 3, player?.lastEnergyRefillAt ?? new Date().toISOString())
+  const { energy, formattedTime, spendEnergy } = useEnergy(player?.mentorEnergy ?? 3, player?.lastEnergyRefillAt ?? new Date().toISOString())
   const isOutOfEnergy = energy === 0
 
   useEffect(() => {
@@ -196,7 +196,8 @@ export function QuestCard({
         }
         throw new Error("AI response failed")
       }
-      
+      spendEnergy()
+
       setMessages([...newMessages, { role: "assistant", content: data.feedback || data.content || "Report accepted." }])
     } catch (err) {
       console.error(err)
