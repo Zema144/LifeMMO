@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "lucide-react"
 import { getMentor } from "@/lib/mentors"
 import { useEnergy } from "@/hooks/use-energy"
-import { PayPalCheckoutButton } from "./PayPalCheckoutButton" // <-- Імпорт кнопки PayPal
+import { PayPalCheckoutButton } from "./PayPalCheckoutButton"
 
 const MAX_ENERGY = 3
 
@@ -150,7 +150,7 @@ export function QuestCard({
   const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
 
-  const { energy, formattedTime, spendEnergy, setEmpty } = useEnergy(
+  const { energy, formattedTime, spendEnergy, setEmpty, fillEnergy } = useEnergy(
     player?.mentorEnergy ?? 3, 
     player?.lastEnergyRefillAt ?? new Date().toISOString()
   )
@@ -180,7 +180,7 @@ export function QuestCard({
           tg.openInvoice(data.invoiceUrl, (status: string) => {
             if (status === 'paid') {
               alert("Payment successful! Energy restored.")
-              window.location.reload()
+              fillEnergy()
             } else if (status === 'cancelled') {
               console.log("Payment cancelled")
             } else {
@@ -356,8 +356,8 @@ export function QuestCard({
                 
                 <div className="relative">
                   {isOutOfEnergy && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md border-t border-white/10 overflow-hidden">
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-cyan-500/20 rounded-full blur-[40px] pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-full z-10 flex flex-col items-center justify-center py-5 min-h-full bg-slate-950/95 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-cyan-500/10 rounded-full blur-[50px] pointer-events-none" />
                       <h3 className="text-[13px] font-pixel uppercase text-white mb-3 z-10 drop-shadow-md">Out of Energy</h3>
                       
                       <div className="z-10 w-full flex justify-center">
@@ -375,7 +375,7 @@ export function QuestCard({
                           </button>
                         ) : (
                           <div className="w-full max-w-[200px] relative z-20">
-                             <PayPalCheckoutButton />
+                             <PayPalCheckoutButton onSuccess={fillEnergy} />
                           </div>
                         )}
                       </div>
@@ -514,7 +514,7 @@ export function QuestCard({
               
               <div className="relative">
                 {isOutOfEnergy && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-3 bg-card/90 backdrop-blur-sm border-t-2 border-border">
+                  <div className="absolute bottom-0 left-0 w-full z-10 flex flex-col items-center justify-center py-4 px-2 min-h-full bg-card/95 backdrop-blur-md border-t-2 border-border shadow-[0_-10px_20px_rgba(0,0,0,0.6)]">
                      <p className="text-[10px] font-pixel text-destructive mb-3 uppercase text-center">Energy Depleted</p>
                      
                      {isTelegram ? (
@@ -527,7 +527,7 @@ export function QuestCard({
                         </button>
                      ) : (
                        <div className="w-full max-w-[200px]">
-                          <PayPalCheckoutButton />
+                          <PayPalCheckoutButton onSuccess={fillEnergy} />
                        </div>
                      )}
                   </div>

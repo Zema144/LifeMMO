@@ -57,5 +57,10 @@ export function useEnergy(initialEnergy: number, initialLastRefillAt: string) {
     setEnergy(0)
   }
 
-  return { energy, formattedTime, spendEnergy, setEmpty }
+  const fillEnergy = () => {
+    setEnergy(MAX_ENERGY)
+    setLastRefillAt(new Date().toISOString())
+  }
+
+  return { energy, formattedTime, spendEnergy, setEmpty, fillEnergy }
 }
