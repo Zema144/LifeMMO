@@ -150,7 +150,7 @@ export function QuestCard({
   const mentorCategory = quest?.npcRole || quest?.tree?.npcRole || quest?.tree?.primaryStat || quest?.statRewardType || "INT"
   const mentor = getMentor(mentorCategory)
 
-  const { energy, formattedTime, spendEnergy } = useEnergy(
+  const { energy, formattedTime, spendEnergy, setEmpty } = useEnergy(
     player?.mentorEnergy ?? 3, 
     player?.lastEnergyRefillAt ?? new Date().toISOString()
   )
@@ -238,6 +238,7 @@ export function QuestCard({
       if (!response.ok) {
         if (data.error === "OUT_OF_ENERGY") {
           setMessages([...newMessages, { role: "assistant", content: data.content }])
+          setEmpty()
           return
         }
         throw new Error("AI response failed")

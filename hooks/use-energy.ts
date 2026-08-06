@@ -53,5 +53,9 @@ export function useEnergy(initialEnergy: number, initialLastRefillAt: string) {
     })
   }
 
-  return { energy, formattedTime, spendEnergy }
+  const setEmpty = () => {
+    setEnergy(0)
+  }
+
+  return { energy, formattedTime, spendEnergy, setEmpty }
 }
