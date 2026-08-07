@@ -6,8 +6,7 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { PageClient } from "@/app/page-client"
 import { getHomeData } from "@/lib/lifemmo-home"
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+
 
 export default async function Page() {
   const session = await getServerSession(authOptions)
