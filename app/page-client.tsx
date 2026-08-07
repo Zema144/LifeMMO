@@ -31,12 +31,14 @@ export function PageClient({
   initialSkillTrees,
   initialActiveTrees,
   initialAcceptedQuestIds,
+  initialExtraQuests = [],
 }: {
   currentUserId: string
   initialPlayer: Player
   initialSkillTrees: SkillTree[]
   initialActiveTrees: SkillTreeId[]
   initialAcceptedQuestIds: string[]
+  initialExtraQuests?: any[]
 }) {
   const router = useRouter()
   const capturedOpenRef = useRef(false)
@@ -47,6 +49,7 @@ export function PageClient({
   const [openNode, setOpenNode] = useState<SkillNode | null>(null)
   const [player, setPlayer] = useState<Player>(initialPlayer)
   const [acceptedQuestIds, setAcceptedQuestIds] = useState<string[]>(initialAcceptedQuestIds)
+  const [extraQuests, setExtraQuests] = useState<any[]>(initialExtraQuests)
   const [questState, setQuestState] = useState<Record<string, Quest[]>>(() =>
     Object.fromEntries(initialSkillTrees.map((tree) => [tree.id, tree.quests])),
   )
@@ -54,6 +57,27 @@ export function PageClient({
   useEffect(() => {
     setPlayer(initialPlayer)
   }, [initialPlayer])
+
+  useEffect(() => {
+    setExtraQuests(initialExtraQuests)
+  }, [initialExtraQuests])
+
+  // Автоматичний санітарний чек дедлайнів при відкритті додатку
+  useEffect(() => {
+    if (!currentUserId) return
+    fetch("/api/quests/check-deadlines", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: currentUserId }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.processed && data.processed > 0) {
+          router.refresh()
+        }
+      })
+      .catch(() => {})
+  }, [currentUserId, router])
 
   useEffect(() => {
     setActiveTrees(initialActiveTrees)
@@ -72,15 +96,15 @@ export function PageClient({
   const treeQuests = questState[selected] ?? []
   const showDebuff = player.hasDebuff && activeTab === "quests"
 
-const drawerQuests = useMemo(() => {
+  const drawerQuests = useMemo(() => {
     if (!openNode?.questIds) return []
     return treeQuests
       .filter((quest) => openNode.questIds!.includes(quest.id))
-      .map((quest) => ({ ...quest, npcRole: tree.npcRole })) // <--- ОСЬ МАГІЯ
+      .map((quest) => ({ ...quest, npcRole: tree.npcRole }))
   }, [openNode, treeQuests, tree])
 
   const mainQuests = useMemo(() => {
-    return acceptedQuestIds
+    const list: any[] = acceptedQuestIds
       .map((id) => {
         const entry = treeIdByQuestId[id]
         if (!entry) return null
@@ -88,10 +112,21 @@ const drawerQuests = useMemo(() => {
         if (!rawQuest) return null
         
         const parentTree = initialSkillTrees.find(t => t.id === entry.treeId)
-        return { ...rawQuest, npcRole: parentTree?.npcRole || "INT" } // <--- ОСЬ МАГІЯ 2
+        return { ...rawQuest, npcRole: parentTree?.npcRole || "INT" }
       })
       .filter((quest): quest is Quest => quest !== null && quest.status !== "completed")
-  }, [acceptedQuestIds, questState, treeIdByQuestId, initialSkillTrees])
+
+    // Об'єднуємо з кастомними та штрафними квестами
+    const activeExtra = (extraQuests || []).filter((q) => q.status !== "completed")
+    const existingIds = new Set(list.map((q) => q.id))
+    for (const eq of activeExtra) {
+      if (!existingIds.has(eq.id)) {
+        list.push(eq)
+      }
+    }
+
+    return list
+  }, [acceptedQuestIds, questState, treeIdByQuestId, initialSkillTrees, extraQuests])
 
 const handleComplete = (id: string) => {
     const entry = treeIdByQuestId[id]
@@ -294,7 +329,13 @@ const handleComplete = (id: string) => {
           )}
           <div className="animate-page-enter" style={{ animationDelay: "220ms" }}>
 
-            <QuestLog quests={mainQuests} player={player} onComplete={handleComplete} />
+            <QuestLog
+              quests={mainQuests}
+              player={player}
+              userId={currentUserId}
+              onComplete={handleComplete}
+              onRefresh={() => router.refresh()}
+            />
           </div>
         </>
       )}

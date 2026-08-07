@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Image from "next/image"
-import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass } from "lucide-react"
+import { Coins, Zap, Check, CircleCheckBig, X, Send, Loader2, Hourglass, Camera, Sparkles, ShieldAlert } from "lucide-react"
+import { SubmitPenaltyModal } from "./submit-penalty-modal"
 import { getMentor } from "@/lib/mentors"
 import { useEnergy } from "@/hooks/use-energy"
 import { PayPalCheckoutButton } from "./PayPalCheckoutButton"
@@ -139,6 +140,7 @@ export function QuestCard({
   variant?: "retro" | "magical"
 }) {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
+  const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false)
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -411,9 +413,27 @@ export function QuestCard({
     )
   }
 
+  const isPenaltyQuest = Boolean(quest.isPenalty || quest.title?.toLowerCase().includes("штраф"))
+  const isCustomQuest = Boolean(quest.isCustom)
+
   return (
     <>
-      <article className="hud-panel bg-card p-4 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+      <article className={`hud-panel bg-card p-4 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${isPenaltyQuest ? 'border-2 border-rose-500/70 bg-rose-950/20' : ''}`}>
+        <div className="flex items-center gap-2 mb-1">
+          {isPenaltyQuest && (
+            <span className="inline-flex items-center gap-1 border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 font-pixel text-[8px] uppercase text-rose-300 font-bold">
+              <ShieldAlert className="size-3 text-rose-400" />
+              Штраф х2
+            </span>
+          )}
+          {isCustomQuest && (
+            <span className="inline-flex items-center gap-1 border border-indigo-500/60 bg-indigo-500/20 px-2 py-0.5 font-pixel text-[8px] uppercase text-indigo-300 font-bold">
+              <Sparkles className="size-3 text-indigo-400" />
+              Кастомний
+            </span>
+          )}
+        </div>
+
         <h3 className="font-pixel text-[11px] leading-relaxed text-foreground text-pretty">{quest.title}</h3>
         
         {quest.expiresAt && (
@@ -444,18 +464,41 @@ export function QuestCard({
             </button>
           )}
 
-          {onComplete && (
+          {isPenaltyQuest ? (
             <button
               type="button"
-              onClick={() => onComplete?.(quest.id)}
-              className="pixel-btn ml-auto flex items-center gap-1.5 bg-primary px-3 py-2 font-pixel text-[8px] leading-none text-primary-foreground transition-all hover:shadow-[0_0_12px_rgba(201,147,46,0.6)] hover:brightness-110 active:translate-y-[2px]"
+              onClick={() => setIsPenaltyModalOpen(true)}
+              className="pixel-btn ml-auto flex items-center gap-1.5 bg-rose-600 px-3 py-2 font-pixel text-[8px] uppercase text-white shadow-[0_0_12px_rgba(225,29,72,0.5)] transition-all hover:bg-rose-500 active:translate-y-[2px]"
             >
-              <Check className="size-3.5" aria-hidden="true" />
-              Complete Quest
+              <Camera className="size-3.5" aria-hidden="true" />
+              Здати штраф (Фото)
             </button>
+          ) : (
+            onComplete && (
+              <button
+                type="button"
+                onClick={() => onComplete?.(quest.id)}
+                className="pixel-btn ml-auto flex items-center gap-1.5 bg-primary px-3 py-2 font-pixel text-[8px] leading-none text-primary-foreground transition-all hover:shadow-[0_0_12px_rgba(201,147,46,0.6)] hover:brightness-110 active:translate-y-[2px]"
+              >
+                <Check className="size-3.5" aria-hidden="true" />
+                Complete Quest
+              </button>
+            )
           )}
         </div>
       </article>
+
+      {isPenaltyModalOpen && (
+        <SubmitPenaltyModal
+          isOpen={isPenaltyModalOpen}
+          onClose={() => setIsPenaltyModalOpen(false)}
+          userId={player?.id || player?.currentUserId || ""}
+          quest={{ id: quest.id, title: quest.title, description: quest.description }}
+          onSuccess={() => {
+            if (onComplete) onComplete(quest.id)
+          }}
+        />
+      )}
 
       {isAiModalOpen && mounted && createPortal(
         <div

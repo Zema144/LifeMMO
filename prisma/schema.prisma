@@ -33,6 +33,7 @@ enum QuestKind {
   MAIN
   MILESTONE
   PENALTY
+  CUSTOM
 }
 
 enum QuestDefaultStatus {
@@ -132,6 +133,8 @@ model User {
   avatarHair         String            @default("short")
   avatarArmor        String            @default("cloth")
   transactions       Transaction[]
+  isBlocked          Boolean   @default(false)
+  createdQuests      Quest[]   @relation("UserCreatedQuests")
 
   @@map("users")
 }
@@ -229,24 +232,27 @@ model SkillNodePrerequisite {
 }
 
 model Quest {
-  id              String             @id @default(cuid())
+    id              String             @id @default(cuid())
   slug            String             @unique
-  treeId          String
+  treeId          String?            
   nodeId          String?
   kind            QuestKind          @default(DAILY)
   title           String
   description     String
   statusDefault   QuestDefaultStatus @default(ACTIVE)
   hasAiHelper     Boolean            @default(false)
+  isCustom        Boolean            @default(false)
+  isPenalty       Boolean            @default(false)
+  createdById     String?
   xpReward        Int                @default(0)
   goldReward      Int                @default(0)
   statRewardType  StatKey?
-  statRewardValue Int?
   sortOrder       Int                @default(0)
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
-  tree            SkillTree          @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  tree            SkillTree?         @relation(fields: [treeId], references: [id], onDelete: Cascade)
   node            SkillNode?         @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  createdBy       User?              @relation("UserCreatedQuests", fields: [createdById], references: [id], onDelete: Cascade)
   users           UserQuest[]
   submissions     QuestSubmission[]
   debuffs         Debuff[]           @relation("SourceQuestDebuffs")

@@ -32,6 +32,7 @@ export default async function Page() {
       initialSkillTrees={data.skillTrees}
       initialActiveTrees={data.activeTrees}
       initialAcceptedQuestIds={data.acceptedQuestIds}
+      initialExtraQuests={data.extraQuests || []}
     />
   )
 }

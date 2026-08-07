@@ -4,28 +4,32 @@ import { getPostHogClient } from "@/lib/posthog-server"
 import { analyticsEvents } from "@/lib/analytics-events"
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
-    userId?: string
-    questSlug?: string
+  try {
+    const body = (await request.json()) as {
+      userId?: string
+      questSlug?: string
+    }
+
+    if (!body.userId || !body.questSlug) {
+      return NextResponse.json({ error: "userId and questSlug are required." }, { status: 400 })
+    }
+
+    const userQuest = await acceptQuest(body.userId, body.questSlug)
+
+    const posthog = getPostHogClient()
+    if (posthog) {
+      posthog.capture({
+        distinctId: body.userId,
+        event: analyticsEvents.questAcceptedServer,
+        properties: {
+          quest_slug: body.questSlug,
+        },
+      })
+      await posthog.flush()
+    }
+
+    return NextResponse.json({ userQuest })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Failed to accept quest." }, { status: 403 })
   }
-
-  if (!body.userId || !body.questSlug) {
-    return NextResponse.json({ error: "userId and questSlug are required." }, { status: 400 })
-  }
-
-  const userQuest = await acceptQuest(body.userId, body.questSlug)
-
-  const posthog = getPostHogClient()
-  if (posthog) {
-    posthog.capture({
-      distinctId: body.userId,
-      event: analyticsEvents.questAcceptedServer,
-      properties: {
-        quest_slug: body.questSlug,
-      },
-    })
-    await posthog.flush()
-  }
-
-  return NextResponse.json({ userQuest })
 }
