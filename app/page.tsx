@@ -7,7 +7,6 @@ import { prisma } from "@/lib/prisma"
 import { PageClient } from "@/app/page-client"
 import { getHomeData } from "@/lib/lifemmo-home"
 
-
 export default async function Page() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
@@ -33,6 +32,7 @@ export default async function Page() {
       initialActiveTrees={data.activeTrees}
       initialAcceptedQuestIds={data.acceptedQuestIds}
       initialExtraQuests={data.extraQuests || []}
+      initialDebuffedQuestSlugs={data.debuffedQuestSlugs}
     />
   )
 }

@@ -28,6 +28,8 @@ export function QuestLog({
   const penaltyQuest = quests.find(
     (q: any) => q.isPenalty || q.title?.toLowerCase().includes("penalty")
   )
+  const activeCustomQuestsCount = quests.filter((q: any) => q.isCustom).length
+  const canCreateCustomQuest = !isBlocked && activeCustomQuestsCount < 3
 
   return (
     <section aria-label="Active quests" className="flex flex-col gap-3">
@@ -51,7 +53,7 @@ export function QuestLog({
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            disabled={isBlocked}
+            disabled={!canCreateCustomQuest}
             className="pixel-btn flex items-center gap-1.5 bg-indigo-600 px-2.5 py-1.5 font-pixel text-[8px] uppercase text-white hover:bg-indigo-500 disabled:opacity-50 transition-all"
           >
             <Plus className="size-3" />
@@ -70,7 +72,7 @@ export function QuestLog({
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            disabled={isBlocked}
+            disabled={!canCreateCustomQuest}
             className="pixel-btn flex items-center gap-1.5 bg-indigo-600 px-3 py-2 font-pixel text-[8px] uppercase text-white hover:bg-indigo-500 disabled:opacity-50"
           >
             <Sparkles className="size-3.5" />

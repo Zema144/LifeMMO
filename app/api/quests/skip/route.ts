@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     // CRITICAL REQUIREMENT (ТЗ розділ 7): Penalty quests CANNOT be skipped or deleted
     if (quest.isPenalty || quest.kind === "PENALTY") {
       return NextResponse.json(
-        { error: "403 Forbidden: Штрафні квести неможливо пропустити чи видалити!" },
+        { error: "403 Forbidden: Penalty quests cannot be skipped or deleted!" },
         { status: 403 }
       )
     }

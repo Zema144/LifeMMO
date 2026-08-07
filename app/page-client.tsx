@@ -32,6 +32,7 @@ export function PageClient({
   initialActiveTrees,
   initialAcceptedQuestIds,
   initialExtraQuests = [],
+  initialDebuffedQuestSlugs = [],
 }: {
   currentUserId: string
   initialPlayer: Player
@@ -39,6 +40,7 @@ export function PageClient({
   initialActiveTrees: SkillTreeId[]
   initialAcceptedQuestIds: string[]
   initialExtraQuests?: any[]
+  initialDebuffedQuestSlugs?: string[]
 }) {
   const router = useRouter()
   const capturedOpenRef = useRef(false)
@@ -105,6 +107,7 @@ export function PageClient({
 
   const mainQuests = useMemo(() => {
     const list: any[] = acceptedQuestIds
+      .filter((id) => !initialDebuffedQuestSlugs.includes(id))
       .map((id) => {
         const entry = treeIdByQuestId[id]
         if (!entry) return null
@@ -126,7 +129,7 @@ export function PageClient({
     }
 
     return list
-  }, [acceptedQuestIds, questState, treeIdByQuestId, initialSkillTrees, extraQuests])
+  }, [acceptedQuestIds, questState, treeIdByQuestId, initialSkillTrees, extraQuests, initialDebuffedQuestSlugs])
 
 const handleComplete = (id: string) => {
     const entry = treeIdByQuestId[id]

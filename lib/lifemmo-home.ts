@@ -158,6 +158,9 @@ export async function getHomeData() {
       userId: user.id,
       resolvedAt: null,
     },
+    include: {
+      sourceQuest: true,
+    },
   })
 
   // --- 4. ФОРМУЄМО ДАНІ ДЛЯ КЛІЄНТА ---
@@ -242,5 +245,8 @@ export async function getHomeData() {
       .filter((entry) => entry.status !== "FAILED")
       .map((entry) => entry.quest.slug),
     extraQuests,
+    debuffedQuestSlugs: activeDebuffs
+      .filter((d) => d.sourceQuest)
+      .map((d) => d.sourceQuest!.slug),
   }
 }
