@@ -5,6 +5,7 @@ import { AlertOctagon, Upload, ShieldCheck, ShieldAlert, X, Loader2, Camera } fr
 
 interface SubmitPenaltyModalProps {
   isOpen: boolean
+  questSlug: string
   questTitle: string
   questDescription: string
   onClose: () => void
@@ -13,6 +14,7 @@ interface SubmitPenaltyModalProps {
 
 export function SubmitPenaltyModal({
   isOpen,
+  questSlug,
   questTitle,
   questDescription,
   onClose,
@@ -56,6 +58,7 @@ export function SubmitPenaltyModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          questSlug,
           questTitle,
           questDescription,
           imageBase64: imagePreview,

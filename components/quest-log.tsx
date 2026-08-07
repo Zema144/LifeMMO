@@ -26,7 +26,7 @@ export function QuestLog({
 
   const isBlocked = Boolean(player?.isBlocked)
   const penaltyQuest = quests.find(
-    (q: any) => q.isPenalty || q.title?.toLowerCase().includes("penalty") || q.title?.toLowerCase().includes("штраф")
+    (q: any) => q.isPenalty || q.title?.toLowerCase().includes("penalty")
   )
 
   return (
@@ -106,6 +106,7 @@ export function QuestLog({
         <SubmitPenaltyModal
           isOpen={Boolean(activePenaltyQuest)}
           onClose={() => setActivePenaltyQuest(null)}
+          questSlug={activePenaltyQuest.slug}
           questTitle={activePenaltyQuest.title}
           questDescription={activePenaltyQuest.description}
           onSuccess={() => {

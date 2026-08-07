@@ -113,7 +113,7 @@ export async function getAcceptedQuestsForUser(userId: string) {
   return prisma.userQuest.findMany({
     where: {
       userId,
-      status: { in: ["ACCEPTED", "FAILED", "COMPLETED"] },
+      status: { in: ["ACCEPTED", "COMPLETED"] },
     },
     orderBy: { acceptedAt: "asc" },
     include: {
@@ -143,7 +143,7 @@ export async function countActiveCustomQuests(userId: string): Promise<number> {
 export async function acceptQuest(userId: string, questSlug: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (user?.isBlocked) {
-    throw new Error("Акаунт заблоковано через наявність активного штрафу. Спочатку складіть фото-доказ для штрафного квесту!")
+    throw new Error("Account is blocked due to an active penalty. Submit a photo proof for the penalty quest first!")
   }
 
   const quest = await prisma.quest.findUniqueOrThrow({
@@ -361,7 +361,7 @@ export async function processOverdueQuests(userId: string) {
         sourceQuestId: expired.quest.id,
         stat: "STR",
         value: 20,
-        reason: `Провалено дедлайн квесту: ${expired.quest.title}`,
+        reason: `Missed quest deadline: ${expired.quest.title}`,
         penaltyQuestTitle: penaltyData.title,
         penaltyDescription: penaltyData.description,
       },
@@ -464,11 +464,11 @@ export async function submitPenaltyProof(
   })
 
   if (!quest) {
-    return { success: false, reason: "Квест не знайдено." }
+    return { success: false, reason: "Quest not found." }
   }
 
   if (!quest.isPenalty) {
-    return { success: false, reason: "Цей квест не є штрафним." }
+    return { success: false, reason: "This quest is not a penalty." }
   }
 
   // Verify photo via Gemini Vision AI
@@ -482,12 +482,35 @@ export async function submitPenaltyProof(
   if (!aiResult.success) {
     return {
       success: false,
-      reason: aiResult.reason || "Суворий суддя AI не зарахував надане фото.",
+      reason: aiResult.reason || "Strict AI Judge rejected the provided photo.",
     }
   }
 
   // AI Approved -> complete penalty quest, award rewards, unblock user
   await completeQuest(userId, questSlug)
+
+  // Find associated debuff and resolve it
+  const debuffs = await prisma.debuff.findMany({
+    where: {
+      userId,
+      isActive: true,
+      penaltyQuestTitle: quest.title,
+    },
+  })
+
+  for (const debuff of debuffs) {
+    await prisma.debuff.update({
+      where: { id: debuff.id },
+      data: { isActive: false, resolvedAt: new Date() },
+    })
+
+    if (debuff.sourceQuestId) {
+      await prisma.userQuest.updateMany({
+        where: { userId, questId: debuff.sourceQuestId },
+        data: { status: "COMPLETED", completedAt: new Date() },
+      })
+    }
+  }
 
   // Unblock user explicitly
   await prisma.user.update({

@@ -81,8 +81,8 @@ function QuestTimer({ expiresAt }: { expiresAt?: string }) {
 
   if (timeLeft.isExpired) {
     return (
-      <div className="inline-flex items-center gap-1.5 border border-destructive/50 bg-destructive/15 px-2 py-1 font-pixel text-[8px] uppercase text-destructive animate-pulse mt-1">
-        <Hourglass className="size-3" aria-hidden="true" />
+      <div className="inline-flex items-center gap-1.5 border border-destructive/50 bg-destructive/15 px-2 py-1 font-pixel text-[8px] uppercase text-destructive mt-1">
+        <Hourglass className="size-3 animate-pulse" aria-hidden="true" />
         <span>Expired (Penalty Pending)</span>
       </div>
     )
@@ -93,7 +93,7 @@ function QuestTimer({ expiresAt }: { expiresAt?: string }) {
   return (
     <div className={`inline-flex items-center gap-1.5 border px-2 py-1 font-pixel text-[8px] uppercase tracking-wider mt-1 ${
       isUrgent 
-        ? "border-amber-500/60 bg-amber-500/15 text-amber-400 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.2)]" 
+        ? "border-amber-500/60 bg-amber-500/15 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]" 
         : "border-primary/40 bg-primary/10 text-primary shadow-[0_0_8px_rgba(201,147,46,0.15)]"
     }`}>
       <Hourglass className={`size-3 ${isUrgent ? 'animate-[spin_1.5s_linear_infinite]' : 'animate-[spin_4s_linear_infinite]'}`} aria-hidden="true" />
@@ -413,7 +413,7 @@ export function QuestCard({
     )
   }
 
-  const isPenaltyQuest = Boolean(quest.isPenalty || quest.title?.toLowerCase().includes("штраф"))
+  const isPenaltyQuest = Boolean(quest.isPenalty || quest.title?.toLowerCase().includes("penalty"))
   const isCustomQuest = Boolean(quest.isCustom)
 
   return (
@@ -423,13 +423,13 @@ export function QuestCard({
           {isPenaltyQuest && (
             <span className="inline-flex items-center gap-1 border border-rose-500/60 bg-rose-500/20 px-2 py-0.5 font-pixel text-[8px] uppercase text-rose-300 font-bold">
               <ShieldAlert className="size-3 text-rose-400" />
-              Штраф х2
+              Penalty x2
             </span>
           )}
           {isCustomQuest && (
             <span className="inline-flex items-center gap-1 border border-indigo-500/60 bg-indigo-500/20 px-2 py-0.5 font-pixel text-[8px] uppercase text-indigo-300 font-bold">
               <Sparkles className="size-3 text-indigo-400" />
-              Кастомний
+              Custom
             </span>
           )}
         </div>
@@ -471,7 +471,7 @@ export function QuestCard({
               className="pixel-btn ml-auto flex items-center gap-1.5 bg-rose-600 px-3 py-2 font-pixel text-[8px] uppercase text-white shadow-[0_0_12px_rgba(225,29,72,0.5)] transition-all hover:bg-rose-500 active:translate-y-[2px]"
             >
               <Camera className="size-3.5" aria-hidden="true" />
-              Здати штраф (Фото)
+              Submit Proof (Photo)
             </button>
           ) : (
             onComplete && (
@@ -492,8 +492,9 @@ export function QuestCard({
         <SubmitPenaltyModal
           isOpen={isPenaltyModalOpen}
           onClose={() => setIsPenaltyModalOpen(false)}
-          userId={player?.id || player?.currentUserId || ""}
-          quest={{ id: quest.id, title: quest.title, description: quest.description }}
+          questSlug={quest.slug}
+          questTitle={quest.title}
+          questDescription={quest.description}
           onSuccess={() => {
             if (onComplete) onComplete(quest.id)
           }}
