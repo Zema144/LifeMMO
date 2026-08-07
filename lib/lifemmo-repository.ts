@@ -374,49 +374,28 @@ export async function processOverdueQuests(userId: string) {
 /**
  * Module 1: Create Custom Quest with AI Gatekeeper
  */
-export async function createCustomQuest(
-  userId: string,
-  title: string,
-  description?: string,
-  deadlineHours: number = 24
-) {
-  // Check user blocked
+export async function createCustomQuest(input: {
+  userId: string
+  title: string
+  description?: string
+  hoursToComplete?: number
+  xpReward?: number
+  goldReward?: number
+}) {
+  const { userId, title, description, hoursToComplete = 24, xpReward = 60, goldReward = 30 } = input
+
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (user?.isBlocked) {
-    return {
-      error: "Account is blocked due to an active penalty. Complete the penalty quest before creating new ones!",
-      status: 403,
-    }
+    throw new Error("Account is blocked due to an active penalty. Complete the penalty quest first!")
   }
 
-  // Check active custom quests count (max 3)
   const activeCount = await countActiveCustomQuests(userId)
   if (activeCount >= 3) {
-    return {
-      error: "Limit reached! You already have 3 active custom quests.",
-      status: 400,
-    }
-  }
-
-  // AI Validation
-  const aiValidation = await validateCustomQuestWithAI(title, description)
-  if (aiValidation.status === "REJECTED_UNREALISTIC") {
-    return {
-      error: "REJECTED_UNREALISTIC",
-      reason: aiValidation.reason,
-      status: 400,
-    }
-  }
-  if (aiValidation.status === "REJECTED_TOO_SIMPLE") {
-    return {
-      error: "REJECTED_TOO_SIMPLE",
-      reason: aiValidation.reason,
-      status: 400,
-    }
+    throw new Error("Limit reached! You already have 3 active custom quests.")
   }
 
   const questSlug = `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`
-  const expiresAt = new Date(Date.now() + deadlineHours * 60 * 60 * 1000)
+  const expiresAt = new Date(Date.now() + hoursToComplete * 60 * 60 * 1000)
 
   const quest = await prisma.quest.create({
     data: {
@@ -426,28 +405,16 @@ export async function createCustomQuest(
       kind: "CUSTOM",
       isCustom: true,
       createdById: userId,
-      xpReward: aiValidation.xpReward || 60,
-      goldReward: aiValidation.goldReward || 30,
+      xpReward,
+      goldReward,
     },
   })
 
-  const userQuest = await prisma.userQuest.create({
-    data: {
-      userId,
-      questId: quest.id,
-      status: "ACCEPTED",
-      expiresAt,
-    },
+  await prisma.userQuest.create({
+    data: { userId, questId: quest.id, status: "ACCEPTED", expiresAt },
   })
 
-  return {
-    success: true,
-    quest,
-    userQuest,
-    xpReward: aiValidation.xpReward,
-    goldReward: aiValidation.goldReward,
-    reason: aiValidation.reason,
-  }
+  return quest
 }
 
 /**

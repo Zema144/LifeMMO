@@ -30,6 +30,11 @@ export function QuestLog({
   )
   const activeCustomQuestsCount = quests.filter((q: any) => q.isCustom).length
   const canCreateCustomQuest = !isBlocked && activeCustomQuestsCount < 3
+  const disabledReason = isBlocked
+    ? "Account blocked"
+    : activeCustomQuestsCount >= 3
+      ? "Slot limit reached"
+      : null
 
   return (
     <section aria-label="Active quests" className="flex flex-col gap-3">
@@ -45,22 +50,26 @@ export function QuestLog({
       )}
 
       {/* Header bar */}
-      <div className="flex items-center gap-2">
-        <ScrollText className="size-4 text-gold" aria-hidden="true" />
-        <h2 className="font-pixel text-[10px] uppercase text-foreground">Active Quests</h2>
-
-        <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-col items-end gap-1">
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
             disabled={!canCreateCustomQuest}
-            className="pixel-btn flex items-center gap-1.5 bg-indigo-600 px-2.5 py-1.5 font-pixel text-[8px] uppercase text-white hover:bg-indigo-500 disabled:opacity-50 transition-all"
+            title={disabledReason ?? undefined}
+            className="pixel-btn flex items-center gap-1.5 bg-indigo-600 px-2.5 py-1.5 font-pixel text-[8px] uppercase text-white hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100 transition-all"
           >
-            <Plus className="size-3" />
-            <span>+ Create Quest</span>
+            <Plus className="size-3" aria-hidden="true" />
+            <span>Create Quest</span>
+            <span className="ml-0.5 rounded-full bg-black/25 px-1.5 py-0.5 text-[7px] leading-none">
+              {activeCustomQuestsCount}/3
+            </span>
           </button>
-          <span className="font-pixel text-[8px] text-muted-foreground">{quests.length} active</span>
+          {disabledReason && (
+            <span className="font-pixel text-[7px] uppercase text-destructive">{disabledReason}</span>
+          )}
         </div>
+        <span className="font-pixel text-[8px] text-muted-foreground">{quests.length} active</span>
       </div>
 
       {quests.length === 0 ? (
@@ -96,6 +105,7 @@ export function QuestLog({
       {isCreateModalOpen && (
         <CreateCustomQuestModal
           isOpen={isCreateModalOpen}
+          activeCount={activeCustomQuestsCount}
           onClose={() => setIsCreateModalOpen(false)}
           onQuestCreated={() => {
             if (onRefresh) onRefresh()

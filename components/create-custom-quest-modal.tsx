@@ -7,16 +7,25 @@ interface CreateCustomQuestModalProps {
   isOpen: boolean
   onClose: () => void
   onQuestCreated: () => void
+  activeCount?: number
 }
+
+const DEADLINE_PRESETS = [
+  { label: "6h", value: 6 },
+  { label: "12h", value: 12 },
+  { label: "24h", value: 24 },
+  { label: "48h", value: 48 },
+  { label: "72h", value: 72 },
+]
 
 export function CreateCustomQuestModal({
   isOpen,
   onClose,
   onQuestCreated,
+  activeCount = 0,
 }: CreateCustomQuestModalProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [treeSlug, setTreeSlug] = useState("fitness")
   const [hoursToComplete, setHoursToComplete] = useState(24)
   const [isLoading, setIsLoading] = useState(false)
   const [aiFeedback, setAiFeedback] = useState<{
@@ -42,8 +51,7 @@ export function CreateCustomQuestModal({
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
-          treeSlug,
-          hoursToComplete: Number(hoursToComplete),
+          hoursToComplete,
         }),
       })
 
@@ -69,8 +77,9 @@ export function CreateCustomQuestModal({
         onClose()
         setTitle("")
         setDescription("")
+        setHoursToComplete(24)
         setAiFeedback(null)
-      }, 1800)
+      }, 1600)
     } catch {
       setAiFeedback({
         status: "REJECTED_UNREALISTIC",
@@ -82,138 +91,145 @@ export function CreateCustomQuestModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-xl border-2 border-primary/50 bg-card p-6 shadow-2xl space-y-4">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
-        >
-          <X className="size-5" />
-        </button>
-
-        <div className="flex items-center gap-3 border-b border-border pb-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
-            <Sparkles className="size-6" />
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Create custom quest"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 p-4 sm:items-center backdrop-blur-sm animate-in fade-in duration-300"
+      onClick={onClose}
+    >
+      <div
+        className="hud-panel flex w-full max-w-md flex-col bg-card shadow-[0_0_30px_rgba(99,102,241,0.25)] animate-in zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b-2 border-border p-4">
+          <div className="flex items-center gap-2">
+            <span className="flex size-8 items-center justify-center border-2 border-indigo-500/60 bg-indigo-500/15 text-indigo-300">
+              <Sparkles className="size-4" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="font-pixel text-[11px] text-foreground tracking-wide">Custom Quest</h2>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">{activeCount}/3 slots used</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-pixel text-lg text-foreground">Create Custom Quest</h2>
-            <p className="text-xs text-muted-foreground">AI Gatekeeper validates difficulty and rewards</p>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="pixel-btn bg-secondary p-1.5 text-foreground transition-transform active:scale-95"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-pixel uppercase text-muted-foreground mb-1">
-              Quest Title *
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+          <div className="space-y-1.5">
+            <label className="font-pixel text-[9px] uppercase tracking-wide text-muted-foreground">
+              Quest Title
             </label>
             <input
               type="text"
               required
+              maxLength={80}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Do 30 push-ups & 20 squats"
-              className="w-full rounded-md border border-input bg-background p-2.5 text-sm focus:border-primary focus:outline-none"
+              className="hud-inset w-full bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-pixel uppercase text-muted-foreground mb-1">
-              Description (optional)
+          <div className="space-y-1.5">
+            <label className="font-pixel text-[9px] uppercase tracking-wide text-muted-foreground">
+              Description <span className="normal-case text-muted-foreground/70">(optional)</span>
             </label>
             <textarea
               rows={3}
+              maxLength={300}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Specify requirements and criteria for completion..."
-              className="w-full rounded-md border border-input bg-background p-2.5 text-sm focus:border-primary focus:outline-none resize-none"
+              className="hud-inset w-full resize-none bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-pixel uppercase text-muted-foreground mb-1">
-                Skill Tree
-              </label>
-              <select
-                value={treeSlug}
-                onChange={(e) => setTreeSlug(e.target.value)}
-                className="w-full rounded-md border border-input bg-background p-2.5 text-sm focus:border-primary focus:outline-none"
-              >
-                <option value="fitness">Fitness & Health</option>
-                <option value="mindfulness">Mindfulness</option>
-                <option value="learning">Learning & Wisdom</option>
-                <option value="productivity">Productivity</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-pixel uppercase text-muted-foreground mb-1 flex items-center gap-1">
-                <Clock className="size-3" /> Time Limit (Hours)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={72}
-                value={hoursToComplete}
-                onChange={(e) => setHoursToComplete(Number(e.target.value))}
-                className="w-full rounded-md border border-input bg-background p-2.5 text-sm focus:border-primary focus:outline-none"
-              />
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 font-pixel text-[9px] uppercase tracking-wide text-muted-foreground">
+              <Clock className="size-3" aria-hidden="true" />
+              Deadline
+            </label>
+            <div className="grid grid-cols-5 gap-1.5">
+              {DEADLINE_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => setHoursToComplete(preset.value)}
+                  className={`border-2 py-2 font-pixel text-[9px] transition-all ${
+                    hoursToComplete === preset.value
+                      ? "border-primary bg-primary/20 text-primary"
+                      : "border-border bg-secondary/40 text-muted-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {aiFeedback && (
             <div
-              className={`rounded-lg p-3 text-xs border space-y-1 ${
+              className={`border-2 p-3 text-xs space-y-1.5 animate-in slide-in-from-bottom-2 fade-in duration-300 ${
                 aiFeedback.status === "APPROVED"
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                  : "bg-destructive/10 border-destructive/30 text-destructive"
+                  ? "border-chart-5/50 bg-chart-5/10 text-chart-5"
+                  : "border-destructive/50 bg-destructive/10 text-destructive"
               }`}
             >
-              <div className="flex items-center gap-2 font-pixel">
+              <div className="flex items-center gap-2 font-pixel text-[9px] uppercase">
                 {aiFeedback.status === "APPROVED" ? (
                   <>
-                    <ShieldCheck className="size-4 text-emerald-400" />
+                    <ShieldCheck className="size-3.5" aria-hidden="true" />
                     <span>AI Gatekeeper Approved</span>
                   </>
                 ) : (
                   <>
-                    <ShieldAlert className="size-4 text-destructive" />
+                    <ShieldAlert className="size-3.5" aria-hidden="true" />
                     <span>AI Gatekeeper Rejected</span>
                   </>
                 )}
               </div>
-              <p className="text-[11px] leading-relaxed">{aiFeedback.reason}</p>
+              <p className="text-[11px] leading-relaxed text-foreground/90">{aiFeedback.reason}</p>
               {aiFeedback.status === "APPROVED" && aiFeedback.xpReward && (
-                <div className="flex items-center gap-3 pt-1 text-emerald-300 font-pixel">
-                  <span className="flex items-center gap-1"><Award className="size-3" /> +{aiFeedback.xpReward} XP</span>
-                  <span>+{aiFeedback.goldReward} Gold</span>
+                <div className="flex items-center gap-3 pt-1 font-pixel text-[9px]">
+                  <span className="flex items-center gap-1 text-primary">
+                    <Award className="size-3" aria-hidden="true" /> +{aiFeedback.xpReward} XP
+                  </span>
+                  <span className="text-gold">+{aiFeedback.goldReward}G</span>
                 </div>
               )}
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 text-xs font-pixel rounded-md border border-border hover:bg-accent transition-colors"
+              className="pixel-btn flex-1 bg-secondary py-2.5 font-pixel text-[9px] uppercase text-secondary-foreground transition-all hover:brightness-110 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading || !title.trim()}
-              className="flex items-center gap-2 px-5 py-2 text-xs font-pixel rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="pixel-btn flex flex-[2] items-center justify-center gap-2 bg-indigo-600 py-2.5 font-pixel text-[9px] uppercase text-white transition-all hover:brightness-110 active:translate-y-[2px] disabled:opacity-50"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" />
+                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
                   <span>AI Reviewing...</span>
                 </>
               ) : (
                 <>
-                  <Plus className="size-4" />
+                  <Plus className="size-3.5" aria-hidden="true" />
                   <span>Send to AI Review</span>
                 </>
               )}

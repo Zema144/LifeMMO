@@ -11,23 +11,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, description, treeSlug, hoursToComplete } = await req.json()
+    const { title, description, hoursToComplete } = await req.json()
 
     if (!title || typeof title !== "string") {
-      return NextResponse.json(
-        { error: "Quest title is required." },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Quest title is required." }, { status: 400 })
     }
 
     const validation = await validateCustomQuestWithAI(title, description)
 
     if (validation.status !== "APPROVED") {
       return NextResponse.json(
-        {
-          status: validation.status,
-          error: validation.reason,
-        },
+        { status: validation.status, error: validation.reason },
         { status: 400 }
       )
     }
@@ -36,21 +30,16 @@ export async function POST(req: Request) {
       userId: session.user.id,
       title,
       description: description || "",
-      treeSlug: treeSlug || "fitness",
       hoursToComplete: Number(hoursToComplete) || 24,
       xpReward: validation.xpReward || 60,
       goldReward: validation.goldReward || 30,
     })
 
-    return NextResponse.json({
-      quest,
-      reason: validation.reason,
-    })
-  } catch (error) {
+    return NextResponse.json({ quest, reason: validation.reason })
+  } catch (error: any) {
     console.error("[custom-quest Error]:", error)
-    return NextResponse.json(
-      { error: "Failed to create custom quest." },
-      { status: 500 }
-    )
+    const message = error?.message || "Failed to create custom quest."
+    const status = /blocked|limit reached/i.test(message) ? 400 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }
