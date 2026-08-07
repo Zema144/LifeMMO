@@ -492,7 +492,7 @@ export function QuestCard({
         <SubmitPenaltyModal
           isOpen={isPenaltyModalOpen}
           onClose={() => setIsPenaltyModalOpen(false)}
-          questSlug={quest.slug}
+          questSlug={quest.id}
           questTitle={quest.title}
           questDescription={quest.description}
           onSuccess={() => {

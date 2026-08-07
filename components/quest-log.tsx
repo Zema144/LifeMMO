@@ -108,7 +108,7 @@ export function QuestLog({
         <SubmitPenaltyModal
           isOpen={Boolean(activePenaltyQuest)}
           onClose={() => setActivePenaltyQuest(null)}
-          questSlug={activePenaltyQuest.slug}
+          questSlug={activePenaltyQuest.id}
           questTitle={activePenaltyQuest.title}
           questDescription={activePenaltyQuest.description}
           onSuccess={() => {
