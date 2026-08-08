@@ -96,6 +96,7 @@ export function QuestLog({
               quest={quest}
               player={{ ...player, currentUserId: userId }}
               onComplete={onComplete}
+              onRefresh={onRefresh}
             />
           ))}
         </div>

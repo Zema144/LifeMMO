@@ -133,15 +133,23 @@ export function PageClient({
 
 const handleComplete = (id: string) => {
     const entry = treeIdByQuestId[id]
-    if (!entry) return
-    const quest = entry.quest
+    const extraQuest = !entry ? extraQuests.find((q) => q.id === id) : null
 
-    setQuestState((prev) => ({
-      ...prev,
-      [entry.treeId]: prev[entry.treeId].map((quest) =>
-        quest.id === id ? { ...quest, status: "completed" } : quest,
-      ),
-    }))
+    if (!entry && !extraQuest) return
+
+    const questTitle = entry ? entry.quest.title : extraQuest!.title
+    const treeSlugForAnalytics = entry ? entry.treeId : "extra"
+
+    if (entry) {
+      setQuestState((prev) => ({
+        ...prev,
+        [entry.treeId]: prev[entry.treeId].map((q) =>
+          q.id === id ? { ...q, status: "completed" } : q,
+        ),
+      }))
+    } else {
+      setExtraQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: "completed" } : q)))
+    }
 
     fetch("/api/quests/complete", {
       method: "POST",
@@ -170,19 +178,23 @@ const handleComplete = (id: string) => {
 
         posthog.capture(analyticsEvents.questCompleted, {
           quest_slug: id,
-          quest_title: quest.title,
-          tree_slug: entry.treeId,
+          quest_title: questTitle,
+          tree_slug: treeSlugForAnalytics,
         })
 
         router.refresh()
       })
       .catch(() => {
-        setQuestState((prev) => ({
-          ...prev,
-          [entry.treeId]: prev[entry.treeId].map((quest) =>
-            quest.id === id ? { ...quest, status: "active" } : quest,
-          ),
-        }))
+        if (entry) {
+          setQuestState((prev) => ({
+            ...prev,
+            [entry.treeId]: prev[entry.treeId].map((q) =>
+              q.id === id ? { ...q, status: "active" } : q,
+            ),
+          }))
+        } else {
+          setExtraQuests((prev) => prev.map((q) => (q.id === id ? { ...q, status: "active" } : q)))
+        }
       })
   }
 

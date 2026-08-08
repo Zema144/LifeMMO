@@ -132,11 +132,13 @@ export function QuestCard({
   quest,
   player,
   onComplete,
+  onRefresh,          
   variant = "retro"
 }: {
   quest: any 
   player?: any 
   onComplete?: (id: string) => void
+  onRefresh?: () => void   // NEW
   variant?: "retro" | "magical"
 }) {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false)
@@ -496,7 +498,7 @@ export function QuestCard({
           questTitle={quest.title}
           questDescription={quest.description}
           onSuccess={() => {
-            if (onComplete) onComplete(quest.id)
+            onRefresh?.()
           }}
         />
       )}

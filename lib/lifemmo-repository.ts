@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
-import { generatePenaltyQuestWithAI, validateCustomQuestWithAI, verifyPenaltyPhotoWithAI } from "@/lib/gemini-service"
-
+import { generatePenaltyQuestWithAI, validateCustomQuestWithAI, verifyPenaltyProofWithAI } from "@/lib/gemini-service"
 export type TelegramUserInput = {
+
   telegramId: string
   username?: string | null
   firstName?: string | null
@@ -186,17 +186,16 @@ export async function completeQuest(userId: string, questSlug: string) {
   return prisma.$transaction(async (tx: any) => {
     const quest = await tx.quest.findUniqueOrThrow({
       where: { slug: questSlug },
-      select: {
-        id: true,
-        xpReward: true,
-        goldReward: true,
-        nodeId: true,
-        isPenalty: true,
-        tree: { select: { classColor: true } },
-      },
+      select: { id: true, xpReward: true, goldReward: true, nodeId: true, isPenalty: true, tree: { select: { classColor: true } } },
     })
 
-    // 1. Оновлюємо статус квесту на COMPLETED
+    const existing = await tx.userQuest.findUnique({
+      where: { userId_questId: { userId, questId: quest.id } },
+    })
+    if (existing?.status === "COMPLETED") {
+      return tx.user.findUniqueOrThrow({ where: { id: userId } })
+    }
+
     await tx.userQuest.upsert({
       where: {
         userId_questId: { userId, questId: quest.id },
@@ -214,16 +213,6 @@ export async function completeQuest(userId: string, questSlug: string) {
       },
     })
 
-    await tx.debuff.updateMany({
-      where: {
-        userId: userId,
-        sourceQuestId: quest.id,
-        resolvedAt: null,
-      },
-      data: {
-        resolvedAt: new Date(),
-      },
-    })
 
     let statFieldUpdate = {}
     if (quest.nodeId && quest.tree) {
@@ -333,39 +322,33 @@ export async function processOverdueQuests(userId: string) {
 
     // Створюємо квест в БД
     const penaltyQuest = await prisma.quest.create({
-      data: {
-        slug: penaltySlug,
-        title: penaltyData.title,
-        description: penaltyData.description,
-        kind: "PENALTY",
-        isPenalty: true,
-        xpReward: halfXp,
-        goldReward: halfGold,
-      },
-    })
+    data: {
+      slug: penaltySlug,
+      title: penaltyData.title,
+      description: penaltyData.description,
+      kind: "PENALTY",
+      isPenalty: true,
+      xpReward: halfXp,
+      goldReward: halfGold,
+    },
+  })
 
-    // Додаємо квест користувачу без дедлайну (hangs until completed)
-    await prisma.userQuest.create({
-      data: {
-        userId,
-        questId: penaltyQuest.id,
-        status: "ACCEPTED",
-        expiresAt: null,
-      },
-    })
+  await prisma.userQuest.create({
+    data: { userId, questId: penaltyQuest.id, status: "ACCEPTED", expiresAt: null },
+  })
 
-    // Записуємо дебаф
-    await prisma.debuff.create({
-      data: {
-        userId,
-        sourceQuestId: expired.quest.id,
-        stat: "STR",
-        value: 20,
-        reason: `Missed quest deadline: ${expired.quest.title}`,
-        penaltyQuestTitle: penaltyData.title,
-        penaltyDescription: penaltyData.description,
-      },
-    })
+  await prisma.debuff.create({
+    data: {
+      userId,
+      sourceQuestId: expired.quest.id,
+      penaltyQuestId: penaltyQuest.id,   // NEW — точний лінк
+      stat: "STR",
+      value: 20,
+      reason: `Missed quest deadline: ${expired.quest.title}`,
+      penaltyQuestTitle: penaltyData.title,
+      penaltyDescription: penaltyData.description,
+    },
+  })
   }
 
   return { processed: expiredUserQuests.length }
@@ -423,35 +406,44 @@ export async function createCustomQuest(input: {
 export async function submitPenaltyProof(
   userId: string,
   questSlug: string,
-  imageBase64: string,
-  mimeType: string = "image/jpeg"
+  proof: { imageBase64?: string; textProof?: string }
 ) {
-  const quest = await prisma.quest.findUnique({
-    where: { slug: questSlug },
-  })
+  const quest = await prisma.quest.findUnique({ where: { slug: questSlug } })
 
-  if (!quest) {
-    return { success: false, reason: "Quest not found." }
-  }
+  if (!quest) return { success: false, reason: "Quest not found." }
+  if (!quest.isPenalty) return { success: false, reason: "This quest is not a penalty." }
 
-  if (!quest.isPenalty) {
-    return { success: false, reason: "This quest is not a penalty." }
-  }
-
-  // Verify photo via Gemini Vision AI
-  const aiResult = await verifyPenaltyPhotoWithAI(
-    quest.title,
-    quest.description,
-    imageBase64,
-    mimeType
-  )
+  const aiResult = await verifyPenaltyProofWithAI(quest.title, quest.description, proof)
 
   if (!aiResult.success) {
-    return {
-      success: false,
-      reason: aiResult.reason || "Strict AI Judge rejected the provided photo.",
+    return { success: false, reason: aiResult.reason || "Strict AI Judge rejected the provided proof." }
+  }
+
+  await completeQuest(userId, questSlug)
+
+  const debuffs = await prisma.debuff.findMany({
+    where: { userId, isActive: true, penaltyQuestId: quest.id },   // точний матч замість назви
+  })
+
+  for (const debuff of debuffs) {
+    await prisma.debuff.update({
+      where: { id: debuff.id },
+      data: { isActive: false, resolvedAt: new Date() },
+    })
+
+    if (debuff.sourceQuestId) {
+      await prisma.userQuest.updateMany({
+        where: { userId, questId: debuff.sourceQuestId },
+        data: { status: "COMPLETED", completedAt: new Date() },
+      })
     }
   }
+
+  await prisma.user.update({ where: { id: userId }, data: { isBlocked: false } })
+
+  const updatedUser = await prisma.user.findUnique({ where: { id: userId } })
+  return { success: true, reason: aiResult.reason, user: updatedUser }
+}
 
   // AI Approved -> complete penalty quest, award rewards, unblock user
   await completeQuest(userId, questSlug)

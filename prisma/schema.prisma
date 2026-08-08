@@ -256,6 +256,7 @@ model Quest {
   users           UserQuest[]
   submissions     QuestSubmission[]
   debuffs         Debuff[]           @relation("SourceQuestDebuffs")
+  penaltyDebuffs  Debuff[]           @relation("PenaltyQuestDebuffs")
 
   @@index([treeId])
   @@index([nodeId])
@@ -302,6 +303,7 @@ model Debuff {
   id                 String    @id @default(cuid())
   userId             String
   sourceQuestId      String?
+  penaltyQuestId     String?
   stat               StatKey
   value              Int
   reason             String
@@ -312,6 +314,8 @@ model Debuff {
   resolvedAt         DateTime?
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   sourceQuest        Quest?    @relation("SourceQuestDebuffs", fields: [sourceQuestId], references: [id], onDelete: SetNull)
+  penaltyQuest       Quest?    @relation("PenaltyQuestDebuffs", fields: [penaltyQuestId], references: [id], onDelete: SetNull)
+
 
   @@index([userId, isActive])
   @@map("debuffs")

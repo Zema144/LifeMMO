@@ -10,31 +10,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { questSlug, imageBase64 } = await req.json()
+    const { questSlug, imageBase64, textProof } = await req.json()
 
-    if (!questSlug || !imageBase64) {
+    if (!questSlug || (!imageBase64 && !textProof?.trim())) {
       return NextResponse.json(
-        { error: "Quest slug and photo image are required." },
+        { error: "Quest slug and a photo or written description are required." },
         { status: 400 }
       )
     }
 
-    const result = await submitPenaltyProof(
-      session.user.id,
-      questSlug,
-      imageBase64
-    )
+    const result = await submitPenaltyProof(session.user.id, questSlug, {
+      imageBase64: imageBase64 || undefined,
+      textProof: textProof?.trim() || undefined,
+    })
 
-    if (result.success) {
-      return NextResponse.json(result)
-    } else {
-      return NextResponse.json({ error: result.reason }, { status: 400 })
-    }
+    if (result.success) return NextResponse.json(result)
+    return NextResponse.json({ error: result.reason }, { status: 400 })
   } catch (error) {
     console.error("[submit-penalty Error]:", error)
-    return NextResponse.json(
-      { error: "Failed to process photo verification." },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Failed to process proof verification." }, { status: 500 })
   }
 }
