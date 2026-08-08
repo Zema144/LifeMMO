@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { generatePenaltyQuestWithAI, validateCustomQuestWithAI, verifyPenaltyProofWithAI } from "@/lib/gemini-service"
-export type TelegramUserInput = {
 
+export type TelegramUserInput = {
   telegramId: string
   username?: string | null
   firstName?: string | null
@@ -24,7 +24,6 @@ export function calculatePlayerProgress(currentXp: number, currentLevel: number,
     newLevel++
   }
 
-  // Залишок досвіду до наступного рівня
   const nextLevelTotalXp = getRequiredXpForLevel(newLevel)
   const xpToNext = Math.max(0, nextLevelTotalXp - newXp)
 
@@ -151,7 +150,6 @@ export async function acceptQuest(userId: string, questSlug: string) {
     select: { id: true },
   })
 
-  // Встановлюємо дедлайн: 24 години на виконання
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
   return prisma.userQuest.upsert({
@@ -213,7 +211,6 @@ export async function completeQuest(userId: string, questSlug: string) {
       },
     })
 
-
     let statFieldUpdate = {}
     if (quest.nodeId && quest.tree) {
       const totalQuestsInNode = await tx.quest.count({
@@ -246,7 +243,6 @@ export async function completeQuest(userId: string, questSlug: string) {
 
     const updatedProgress = calculatePlayerProgress(user.xp, user.level, quest.xpReward)
 
-    // Якщо це був штрафний квест, розблоковуємо акаунт
     const unblockUpdate = quest.isPenalty ? { isBlocked: false } : {}
 
     return tx.user.update({
@@ -285,10 +281,8 @@ export async function processOverdueQuests(userId: string) {
   }
 
   for (const expired of expiredUserQuests) {
-    // Не створюємо штраф для штрафного квесту
     if (expired.quest.isPenalty) continue
 
-    // 1. Позначаємо квест як FAILED
     await prisma.userQuest.update({
       where: { id: expired.id },
       data: {
@@ -297,7 +291,6 @@ export async function processOverdueQuests(userId: string) {
       },
     })
 
-    // 2. Знімаємо 20 XP від балансу та блокуємо акаунт
     const user = await prisma.user.findUnique({ where: { id: userId } })
     if (user) {
       const newXp = Math.max(0, user.xp - 20)
@@ -310,7 +303,6 @@ export async function processOverdueQuests(userId: string) {
       })
     }
 
-    // 3. Згенеуємо Штрафний квест (х2 складності)
     const penaltyData = await generatePenaltyQuestWithAI(
       expired.quest.title,
       expired.quest.description
@@ -320,35 +312,34 @@ export async function processOverdueQuests(userId: string) {
     const halfGold = Math.floor((expired.quest.goldReward || 30) / 2)
     const halfXp = Math.floor((expired.quest.xpReward || 50) / 2)
 
-    // Створюємо квест в БД
     const penaltyQuest = await prisma.quest.create({
-    data: {
-      slug: penaltySlug,
-      title: penaltyData.title,
-      description: penaltyData.description,
-      kind: "PENALTY",
-      isPenalty: true,
-      xpReward: halfXp,
-      goldReward: halfGold,
-    },
-  })
+      data: {
+        slug: penaltySlug,
+        title: penaltyData.title,
+        description: penaltyData.description,
+        kind: "PENALTY",
+        isPenalty: true,
+        xpReward: halfXp,
+        goldReward: halfGold,
+      },
+    })
 
-  await prisma.userQuest.create({
-    data: { userId, questId: penaltyQuest.id, status: "ACCEPTED", expiresAt: null },
-  })
+    await prisma.userQuest.create({
+      data: { userId, questId: penaltyQuest.id, status: "ACCEPTED", expiresAt: null },
+    })
 
-  await prisma.debuff.create({
-    data: {
-      userId,
-      sourceQuestId: expired.quest.id,
-      penaltyQuestId: penaltyQuest.id,   // NEW — точний лінк
-      stat: "STR",
-      value: 20,
-      reason: `Missed quest deadline: ${expired.quest.title}`,
-      penaltyQuestTitle: penaltyData.title,
-      penaltyDescription: penaltyData.description,
-    },
-  })
+    await prisma.debuff.create({
+      data: {
+        userId,
+        sourceQuestId: expired.quest.id,
+        penaltyQuestId: penaltyQuest.id,
+        stat: "STR",
+        value: 20,
+        reason: `Missed quest deadline: ${expired.quest.title}`,
+        penaltyQuestTitle: penaltyData.title,
+        penaltyDescription: penaltyData.description,
+      },
+    })
   }
 
   return { processed: expiredUserQuests.length }
@@ -365,7 +356,10 @@ export async function createCustomQuest(input: {
   xpReward?: number
   goldReward?: number
 }) {
-  const { userId, title, description, hoursToComplete = 24, xpReward = 60, goldReward = 30 } = input
+  const { userId, title, description, hoursToComplete = 24 } = input
+
+  const xpReward = Number.isFinite(input.xpReward) ? (input.xpReward as number) : 60
+  const goldReward = Number.isFinite(input.goldReward) ? (input.goldReward as number) : 30
 
   const user = await prisma.user.findUnique({ where: { id: userId } })
   if (user?.isBlocked) {
@@ -401,7 +395,7 @@ export async function createCustomQuest(input: {
 }
 
 /**
- * Module 4: Submit Penalty Photo Proof
+ * Module 4: Submit Penalty Proof (photo and/or text)
  */
 export async function submitPenaltyProof(
   userId: string,
@@ -422,7 +416,7 @@ export async function submitPenaltyProof(
   await completeQuest(userId, questSlug)
 
   const debuffs = await prisma.debuff.findMany({
-    where: { userId, isActive: true, penaltyQuestId: quest.id },   // точний матч замість назви
+    where: { userId, isActive: true, penaltyQuestId: quest.id },
   })
 
   for (const debuff of debuffs) {
@@ -443,45 +437,4 @@ export async function submitPenaltyProof(
 
   const updatedUser = await prisma.user.findUnique({ where: { id: userId } })
   return { success: true, reason: aiResult.reason, user: updatedUser }
-}
-
-  // AI Approved -> complete penalty quest, award rewards, unblock user
-  await completeQuest(userId, questSlug)
-
-  // Find associated debuff and resolve it
-  const debuffs = await prisma.debuff.findMany({
-    where: {
-      userId,
-      isActive: true,
-      penaltyQuestTitle: quest.title,
-    },
-  })
-
-  for (const debuff of debuffs) {
-    await prisma.debuff.update({
-      where: { id: debuff.id },
-      data: { isActive: false, resolvedAt: new Date() },
-    })
-
-    if (debuff.sourceQuestId) {
-      await prisma.userQuest.updateMany({
-        where: { userId, questId: debuff.sourceQuestId },
-        data: { status: "COMPLETED", completedAt: new Date() },
-      })
-    }
-  }
-
-  // Unblock user explicitly
-  await prisma.user.update({
-    where: { id: userId },
-    data: { isBlocked: false },
-  })
-
-  const updatedUser = await prisma.user.findUnique({ where: { id: userId } })
-
-  return {
-    success: true,
-    reason: aiResult.reason,
-    user: updatedUser,
-  }
 }
